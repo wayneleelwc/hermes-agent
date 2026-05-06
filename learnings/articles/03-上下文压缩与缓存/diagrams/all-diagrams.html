@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes 上下文压缩与缓存</title>
+<style>
+:root{--c-bg:#faf8f5;--c-canvas:#fff;--c-ink:#2d2d2d;--c-terra:#c75b39;--c-terra-light:#fdf0ea;--c-sage:#4a7c59;--c-sage-light:#eef5ef;--c-slate:#5b6b7a;--c-slate-light:#f0f3f5;--c-burg:#8b3a3a;--c-burg-light:#fdf2f2;--c-amber:#b8751e;--c-amber-light:#fef8f0;--c-moss:#5c7a4a;--c-moss-light:#f4f7f0;--c-border:#e5e0d8;--c-border-light:#f0ece6;--font-sans:system-ui,-apple-system,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;--font-serif:Georgia,'Times New Roman','Songti SC','SimSun',serif;--font-mono:'SF Mono',Monaco,Consolas,'Courier New',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-sans);background:var(--c-bg);color:var(--c-ink);display:flex;justify-content:center;padding:40px 20px;min-height:100vh}
+.C{background:var(--c-canvas);border:1px solid var(--c-border);box-shadow:0 1px 3px rgba(0,0,0,.04);padding:40px 44px;width:1280px;min-width:1280px}
+.header{margin-bottom:32px;text-align:center}
+.main-title{font-family:var(--font-serif);font-size:28px;font-weight:700;color:var(--c-ink);margin-bottom:4px;letter-spacing:-0.3px}
+.main-title em{font-style:normal;color:var(--c-terra)}
+.subtitle{font-size:14px;color:var(--c-slate)}
+.tabs{display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid var(--c-border);flex-wrap:wrap}
+.tab{padding:10px 18px;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:13px;font-weight:500;color:var(--c-slate);font-family:var(--font-sans);transition:all 0.2s}
+.tab:hover{color:var(--c-ink)}
+.tab.active{color:var(--c-terra);border-bottom-color:var(--c-terra);font-weight:600}
+.tc{display:none}
+.tc.active{display:block;border:1px solid var(--c-border);padding:28px 24px 24px;background:var(--c-canvas);box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.dt{font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--c-ink);margin-bottom:4px;text-align:center}
+.ds{font-size:14px;color:var(--c-slate);text-align:center;margin-bottom:24px}
+.chip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:2px;display:inline-block;white-space:nowrap}
+.chip-t{background:var(--c-terra-light);color:var(--c-terra)}.chip-s{background:var(--c-sage-light);color:var(--c-sage)}.chip-b{background:var(--c-burg-light);color:var(--c-burg)}.chip-a{background:var(--c-amber-light);color:var(--c-amber)}.chip-m{background:var(--c-moss-light);color:var(--c-moss)}.chip-sl{background:var(--c-slate-light);color:var(--c-slate)}
+.card{border:1px solid var(--c-border);border-left:4px solid var(--c-border);margin-bottom:6px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.card-hdr{padding:9px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;background:var(--c-border-light);border-bottom:1px solid var(--c-border)}
+.card-body{padding:12px 14px;font-size:13px;line-height:1.6}
+.card-t{border-left-color:var(--c-terra)}.card-t .card-hdr{background:var(--c-terra-light);color:var(--c-terra)}
+.card-s{border-left-color:var(--c-sage)}.card-s .card-hdr{background:var(--c-sage-light);color:var(--c-sage)}
+.card-b{border-left-color:var(--c-burg)}.card-b .card-hdr{background:var(--c-burg-light);color:var(--c-burg)}
+.L{display:flex;border:1px solid var(--c-border);margin-bottom:2px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.L-tag{width:90px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 8px;border-right:1px solid var(--c-border)}
+.L-num{width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:14px;font-weight:700;margin-bottom:3px}
+.L-label{font-size:11px;font-weight:700;text-align:center;line-height:1.2}
+.L-body{flex:1;padding:12px 16px;display:flex;flex-direction:column;gap:4px}
+.L-title{font-size:14px;font-weight:700;color:var(--c-ink);display:flex;align-items:center;gap:8px}
+.L-row{display:flex;align-items:center;gap:6px;font-size:13px;line-height:1.5}
+.L-dot{width:6px;height:6px;flex-shrink:0}
+.L-right{width:200px;flex-shrink:0;padding:10px 14px;border-left:1px solid var(--c-border);display:flex;flex-direction:column;justify-content:center;gap:3px;background:var(--c-border-light)}
+.L-right-title{font-size:11px;font-weight:700;color:var(--c-ink)}
+.L-right-item{font-size:12px;color:var(--c-slate);line-height:1.4}
+.L.l1 .L-tag{background:var(--c-terra-light)}.L.l1 .L-label{color:var(--c-terra)}.L.l1 .L-num{background:var(--c-terra);color:#fff}
+.L.l2 .L-tag{background:var(--c-sage-light)}.L.l2 .L-label{color:var(--c-sage)}.L.l2 .L-num{background:var(--c-sage);color:#fff}
+.L.l3 .L-tag{background:var(--c-burg-light)}.L.l3 .L-label{color:var(--c-burg)}.L.l3 .L-num{background:var(--c-burg);color:#fff}
+.stage-bar{display:flex;align-items:stretch;gap:2px;margin-bottom:16px}
+.stage-cell{flex:1;padding:12px 10px;color:#fff;display:flex;align-items:center;gap:8px;min-width:0}
+.stage-cell .stage-num{width:28px;height:28px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:14px;font-weight:700;flex-shrink:0}
+.stage-cell .stage-text{flex:1;min-width:0}
+.stage-cell .stage-title{font-size:13px;font-weight:700;line-height:1.2}
+.stage-cell .stage-sub{font-size:10px;opacity:.8;margin-top:1px;line-height:1.3}
+.stage-cell.st1{background:var(--c-terra)}.stage-cell.st2{background:#d4734a}.stage-cell.st3{background:var(--c-sage)}.stage-cell.st4{background:var(--c-slate)}.stage-cell.st5{background:var(--c-moss)}.stage-cell.st6{background:var(--c-burg)}
+.cmp-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px}
+.cmp-table th{background:var(--c-terra-light);color:var(--c-terra);padding:10px 12px;text-align:left;font-weight:700;border:1px solid var(--c-border);font-size:12px}
+.cmp-table td{padding:9px 12px;border:1px solid var(--c-border);line-height:1.5}
+.cmp-table tr:nth-child(even) td{background:var(--c-border-light)}
+.insight{border-left:4px solid var(--c-sage);background:var(--c-sage-light);padding:14px 18px;margin:16px 0;font-size:13px;line-height:1.7}
+.insight strong{color:var(--c-sage)}
+.footer{margin-top:16px;text-align:center;font-size:11px;color:var(--c-slate)}
+</style>
+</head>
+<body>
+<div class="C">
+<div class="header"><div class="main-title">上下文压缩与缓存 — <em>智能压缩管道</em></div><div class="subtitle">Hermes Agent · 第 04 篇 · 压缩机制与 Prompt Cache 深度拆解</div></div>
+<div class="tabs">
+  <button class="tab active" data-tab="tab0">封面</button>
+  <button class="tab" data-tab="tab1">压缩全流程</button>
+  <button class="tab" data-tab="tab2">降级状态机</button>
+  <button class="tab" data-tab="tab3">Cache 断点布局</button>
+  <button class="tab" data-tab="tab4">三向压缩对比</button>
+</div>
+
+<div class="tc active" data-tab="tab0">
+  <div class="dt">上下文压缩与缓存</div>
+  <div class="ds">第 04 篇 · 智能压缩管道与 Prompt Cache 管理</div>
+  <div class="stage-bar">
+    <div class="stage-cell st1"><div class="stage-num">1</div><div class="stage-text"><div class="stage-title">Preflight</div><div class="stage-sub">tokens ≥ 75% 阈值？</div></div></div>
+    <div class="stage-cell st2"><div class="stage-num">2</div><div class="stage-text"><div class="stage-title">Head Keep</div><div class="stage-sub">保留前 3 轮</div></div></div>
+    <div class="stage-cell st3"><div class="stage-num">3</div><div class="stage-text"><div class="stage-title">LLM Summary</div><div class="stage-sub">8 字段结构化模板</div></div></div>
+    <div class="stage-cell st4"><div class="stage-num">4</div><div class="stage-text"><div class="stage-title">Tail Budget</div><div class="stage-sub">~12K tokens 保护</div></div></div>
+    <div class="stage-cell st5"><div class="stage-num">5</div><div class="stage-text"><div class="stage-title">Cache 重建</div><div class="stage-sub">system + 末 3 条</div></div></div>
+    <div class="stage-cell st6"><div class="stage-num">6</div><div class="stage-text"><div class="stage-title">Side Effects</div><div class="stage-sub">通知 + 钩子 + 持久化</div></div></div>
+  </div>
+  <div style="text-align:center;margin-top:16px">
+    <span class="chip chip-t">结构化摘要</span><span class="chip chip-s">三级降级</span><span class="chip chip-a">迭代更新</span><span class="chip chip-sl">Prompt Cache</span><span class="chip chip-b">防抖动</span>
+  </div>
+  <div class="insight"><strong>核心命题：</strong>压缩不是"丢弃消息"，而是"在有限的 token 预算内保留最多的有用信息"。8 字段结构化模板确保关键信息不丢失，迭代摘要更新确保跨压缩的信息连续性。</div>
+</div>
+
+<div class="tc" data-tab="tab1">
+  <div class="dt">压缩全流程</div><div class="ds">从检测到完成，6 阶段 Pipeline</div>
+  <div class="L l1"><div class="L-tag"><div class="L-num">1</div><div class="L-label">触发检测</div></div><div class="L-body"><div class="L-title">Preflight 检查 / API context_length_exceeded <span class="chip chip-t">run_agent.py</span></div><div class="L-row"><div class="L-dot" style="background:var(--c-terra)"></div>估算 tokens（含 tool schemas） → 是否 ≥ 75% context_length？</div></div><div class="L-right"><div class="L-right-title">阈值</div><div class="L-right-item">75% × context_length</div></div></div>
+  <div class="L l2"><div class="L-tag"><div class="L-num">2</div><div class="L-label">三段分割</div></div><div class="L-body"><div class="L-title">Head (3) · Middle · Tail (~12K tokens) <span class="chip chip-s">context_compressor.py</span></div><div class="L-row"><div class="L-dot" style="background:var(--c-sage)"></div>边界对齐：不切 tool_call/result 组 · 确保最新 user msg 在尾部</div></div><div class="L-right"><div class="L-right-title">保护策略</div><div class="L-right-item">token 预算制（非固定条数）</div></div></div>
+  <div class="L l3"><div class="L-tag"><div class="L-num">3</div><div class="L-label">LLM 摘要</div></div><div class="L-body"><div class="L-title">8 字段结构化模板 · 迭代更新 <span class="chip chip-b">_generate_summary()</span></div><div class="L-row"><div class="L-dot" style="background:var(--c-burg)"></div>Progress / Decisions / Resolved / Pending / Files / Remaining / Critical Context / Tool Outputs</div></div><div class="L-right"><div class="L-right-title">摘要模型</div><div class="L-right-item">summary_model or main</div></div></div>
+  <div class="L l1"><div class="L-tag"><div class="L-num">4</div><div class="L-label">消息重组</div></div><div class="L-body"><div class="L-title">Head + Summary + Tail → compressed messages</div><div class="L-row"><div class="L-dot" style="background:var(--c-terra)"></div>摘要注入为 user role 消息 · 摘要前缀与前一条 msg 合并避免孤儿</div></div><div class="L-right"><div class="L-right-title">副作用</div><div class="L-right-item">新 session ID · Cache 失效 · Provider 钩子</div></div></div>
+  <div class="L l2"><div class="L-tag"><div class="L-num">5</div><div class="L-label">有效性检查</div></div><div class="L-body"><div class="L-title">Token 节省率 ≥ 10%？<span class="chip chip-s">防抖动</span></div><div class="L-row"><div class="L-dot" style="background:var(--c-sage)"></div>连续无效压缩 → _ineffective_compression_count++ </div></div><div class="L-right"><div class="L-right-title">重试上限</div><div class="L-right-item">最多 3 次</div></div></div>
+  <div class="L l3"><div class="L-tag"><div class="L-num">6</div><div class="L-label">Cache 重建</div></div><div class="L-body"><div class="L-title">新的 System Prompt → 新的 cache prefix</div><div class="L-row"><div class="L-dot" style="background:var(--c-burg)"></div>下次 API 调用自动建立 Anthropic Prompt Cache</div></div><div class="L-right"><div class="L-right-title">TTL</div><div class="L-right-item">5m (默认) / 1h</div></div></div>
+</div>
+
+<div class="tc" data-tab="tab2">
+  <div class="dt">降级状态机</div><div class="ds">三级 fallback：summary_model → main model → 纯截断</div>
+  <table class="cmp-table">
+    <tr><th>级别</th><th>策略</th><th>触发条件</th><th>cooldown</th></tr>
+    <tr><td><strong>Level 1</strong></td><td>summary_model 生成摘要</td><td>—（默认路径）</td><td>无</td></tr>
+    <tr><td><strong>Level 2</strong></td><td>Fallback 到主模型</td><td>404 / 503 / "model not found" / "does not exist"</td><td>无（立即切换）</td></tr>
+    <tr><td><strong>Level 3</strong></td><td>纯截断（无摘要）</td><td>Timeout / Rate-limit / Network error</td><td>60s cooldown</td></tr>
+  </table>
+  <div class="insight"><strong>错误类型分化：</strong>permanent 错误（模型不存在）立即 fallback，transient 错误（超时/限流）做 cooldown。不同错误走不同路径，避免在不可恢复的错误上浪费重试。</div>
+</div>
+
+<div class="tc" data-tab="tab3">
+  <div class="dt">Prompt Cache 断点布局</div><div class="ds">system_and_3 策略：system prompt + 最末 3 条消息标记为 cache_control</div>
+  <div class="stage-bar">
+    <div class="stage-cell st1"><div class="stage-num">S</div><div class="stage-text"><div class="stage-title">System</div><div class="stage-sub">cache_control<br>breakpoint</div></div></div>
+    <div class="stage-cell st2"><div class="stage-num">M1</div><div class="stage-text"><div class="stage-title">User Msg 1</div><div class="stage-sub">首条用户消息</div></div></div>
+    <div class="stage-cell st2"><div class="stage-num">M2</div><div class="stage-text"><div class="stage-title">...</div><div class="stage-sub">中间历史</div></div></div>
+    <div class="stage-cell st3"><div class="stage-num">N-3</div><div class="stage-text"><div class="stage-title">最近-3</div><div class="stage-sub">cache_control<br>breakpoint</div></div></div>
+    <div class="stage-cell st3"><div class="stage-num">N-2</div><div class="stage-text"><div class="stage-title">最近-2</div><div class="stage-sub">cache_control</div></div></div>
+    <div class="stage-cell st3"><div class="stage-num">N-1</div><div class="stage-text"><div class="stage-title">最新</div><div class="stage-sub">cache_control</div></div></div>
+  </div>
+  <div class="card card-s"><div class="card-hdr"><span class="chip chip-s">TTL</span> 两种缓存期限</div><div class="card-body"><strong>5m：</strong>写入成本 1.25x，适合短会话。<strong>1h：</strong>写入成本 2x，适合长会话（暂停 &gt;5 分钟后仍命中）。</div></div>
+  <div class="card card-b"><div class="card-hdr"><span class="chip chip-b">失效</span> 压缩触发重建</div><div class="card-body">压缩改变 system prompt 和消息列表 → cache prefix 不再匹配 → 下次 API 调用建立新缓存。Session DB 中的 system_prompt 被更新以保证后续轮次的缓存一致性。</div></div>
+</div>
+
+<div class="tc" data-tab="tab4">
+  <div class="dt">三向压缩对比</div><div class="ds">Hermes vs Gemini CLI vs Claude Code 的上下文管理哲学</div>
+  <table class="cmp-table">
+    <tr><th>维度</th><th>Hermes</th><th>Gemini CLI</th><th>Claude Code</th></tr>
+    <tr><td><strong>触发方式</strong></td><td>Preflight 主动 + API 错误被动</td><td>六道递进防线</td><td>Context collapse 检测</td></tr>
+    <tr><td><strong>摘要格式</strong></td><td>8 字段结构化模板</td><td>自由格式</td><td>简化摘要</td></tr>
+    <tr><td><strong>降级层次</strong></td><td>3 级（summary→main→truncate）</td><td>多级递进</td><td>单层</td></tr>
+    <tr><td><strong>摘要复用</strong></td><td>迭代更新</td><td>每次重建</td><td>每次重建</td></tr>
+    <tr><td><strong>Cache 协议</strong></td><td>Anthropic Prompt Cache（显式断点）</td><td>Gemini KV Cache（隐式）</td><td>Anthropic Prompt Cache（显式断点）</td></tr>
+    <tr><td><strong>尾部保护</strong></td><td>Token 预算制（~12K）</td><td>固定消息数</td><td>消息数 + token 估算</td></tr>
+    <tr><td><strong>防抖动</strong></td><td>✓（连续无效压缩跟踪）</td><td>✗</td><td>✗</td></tr>
+    <tr><td><strong>用户通知</strong></td><td>✓（status_callback → 平台消息）</td><td>✓（控制台输出）</td><td>✓（控制台输出）</td></tr>
+    <tr><td><strong>Memory 钩子</strong></td><td>on_pre_compress（保存关键信息）</td><td>无</td><td>无</td></tr>
+  </table>
+</div>
+<div class="footer">Hermes Agent 深度拆解 · 第 04 篇 · 上下文压缩与缓存</div>
+</div>
+<script>
+(function(){var tabs=document.querySelectorAll('.tabs .tab');var panes=document.querySelectorAll('.tc');tabs.forEach(function(btn){btn.addEventListener('click',function(){var key=btn.getAttribute('data-tab');tabs.forEach(function(b){b.classList.remove('active')});panes.forEach(function(p){p.classList.remove('active')});btn.classList.add('active');var pane=document.querySelector('.tc[data-tab="'+key+'"]');if(pane)pane.classList.add('active')})})})();
+</script>
+</body>
+</html>
