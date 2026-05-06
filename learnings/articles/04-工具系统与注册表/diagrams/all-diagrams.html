@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes 工具系统</title>
+<style>
+:root{--c-bg:#faf8f5;--c-canvas:#fff;--c-ink:#2d2d2d;--c-terra:#c75b39;--c-terra-light:#fdf0ea;--c-sage:#4a7c59;--c-sage-light:#eef5ef;--c-slate:#5b6b7a;--c-slate-light:#f0f3f5;--c-burg:#8b3a3a;--c-burg-light:#fdf2f2;--c-amber:#b8751e;--c-amber-light:#fef8f0;--c-moss:#5c7a4a;--c-moss-light:#f4f7f0;--c-border:#e5e0d8;--c-border-light:#f0ece6;--font-sans:system-ui,-apple-system,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;--font-serif:Georgia,'Times New Roman','Songti SC','SimSun',serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-sans);background:var(--c-bg);color:var(--c-ink);display:flex;justify-content:center;padding:40px 20px;min-height:100vh}
+.C{background:var(--c-canvas);border:1px solid var(--c-border);box-shadow:0 1px 3px rgba(0,0,0,.04);padding:40px 44px;width:1280px;min-width:1280px}
+.header{margin-bottom:32px;text-align:center}
+.main-title{font-family:var(--font-serif);font-size:28px;font-weight:700;color:var(--c-ink);margin-bottom:4px}
+.main-title em{font-style:normal;color:var(--c-terra)}
+.subtitle{font-size:14px;color:var(--c-slate)}
+.tabs{display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid var(--c-border);flex-wrap:wrap}
+.tab{padding:10px 18px;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:13px;font-weight:500;color:var(--c-slate);font-family:var(--font-sans)}
+.tab:hover{color:var(--c-ink)}
+.tab.active{color:var(--c-terra);border-bottom-color:var(--c-terra);font-weight:600}
+.tc{display:none}
+.tc.active{display:block;border:1px solid var(--c-border);padding:28px 24px 24px;background:var(--c-canvas);box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.dt{font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--c-ink);margin-bottom:4px;text-align:center}
+.ds{font-size:14px;color:var(--c-slate);text-align:center;margin-bottom:24px}
+.chip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:2px;display:inline-block}
+.chip-t{background:var(--c-terra-light);color:var(--c-terra)}.chip-s{background:var(--c-sage-light);color:var(--c-sage)}.chip-b{background:var(--c-burg-light);color:var(--c-burg)}.chip-a{background:var(--c-amber-light);color:var(--c-amber)}.chip-m{background:var(--c-moss-light);color:var(--c-moss)}.chip-sl{background:var(--c-slate-light);color:var(--c-slate)}
+.card{border:1px solid var(--c-border);border-left:4px solid var(--c-border);margin-bottom:6px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.card-hdr{padding:9px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;background:var(--c-border-light);border-bottom:1px solid var(--c-border)}
+.card-body{padding:12px 14px;font-size:13px;line-height:1.6}
+.card-t{border-left-color:var(--c-terra)}.card-t .card-hdr{background:var(--c-terra-light);color:var(--c-terra)}
+.card-s{border-left-color:var(--c-sage)}.card-s .card-hdr{background:var(--c-sage-light);color:var(--c-sage)}
+.L{display:flex;border:1px solid var(--c-border);margin-bottom:2px}
+.L-tag{width:100px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 8px;border-right:1px solid var(--c-border)}
+.L-num{width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:14px;font-weight:700;margin-bottom:3px}
+.L-label{font-size:11px;font-weight:700;text-align:center}
+.L-body{flex:1;padding:12px 16px;display:flex;flex-direction:column;gap:4px}
+.L-title{font-size:14px;font-weight:700;color:var(--c-ink);display:flex;align-items:center;gap:8px}
+.L-row{display:flex;align-items:center;gap:6px;font-size:13px;line-height:1.5}
+.L-dot{width:6px;height:6px;flex-shrink:0}
+.L-right{width:180px;flex-shrink:0;padding:10px 14px;border-left:1px solid var(--c-border);display:flex;flex-direction:column;justify-content:center;gap:3px;background:var(--c-border-light)}
+.L-right-title{font-size:11px;font-weight:700;color:var(--c-ink)}.L-right-item{font-size:12px;color:var(--c-slate)}
+.L.l1 .L-tag{background:var(--c-terra-light)}.L.l1 .L-label{color:var(--c-terra)}.L.l1 .L-num{background:var(--c-terra);color:#fff}
+.L.l2 .L-tag{background:var(--c-sage-light)}.L.l2 .L-label{color:var(--c-sage)}.L.l2 .L-num{background:var(--c-sage);color:#fff}
+.L.l3 .L-tag{background:var(--c-burg-light)}.L.l3 .L-label{color:var(--c-burg)}.L.l3 .L-num{background:var(--c-burg);color:#fff}
+.stage-bar{display:flex;align-items:stretch;gap:2px;margin-bottom:16px}
+.stage-cell{flex:1;padding:12px 10px;color:#fff;display:flex;align-items:center;gap:8px;min-width:0}
+.stage-cell .stage-num{width:28px;height:28px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:14px;font-weight:700;flex-shrink:0}
+.stage-cell .stage-text{flex:1}.stage-cell .stage-title{font-size:13px;font-weight:700}.stage-cell .stage-sub{font-size:10px;opacity:.8;margin-top:1px}
+.stage-cell.st1{background:var(--c-terra)}.stage-cell.st2{background:#d4734a}.stage-cell.st3{background:var(--c-sage)}.stage-cell.st4{background:var(--c-slate)}.stage-cell.st5{background:var(--c-moss)}.stage-cell.st6{background:var(--c-burg)}
+.cmp-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px}
+.cmp-table th{background:var(--c-terra-light);color:var(--c-terra);padding:10px 12px;text-align:left;font-weight:700;border:1px solid var(--c-border);font-size:12px}
+.cmp-table td{padding:9px 12px;border:1px solid var(--c-border);line-height:1.5}
+.cmp-table tr:nth-child(even) td{background:var(--c-border-light)}
+.insight{border-left:4px solid var(--c-sage);background:var(--c-sage-light);padding:14px 18px;margin:16px 0;font-size:13px;line-height:1.7}.insight strong{color:var(--c-sage)}
+.footer{margin-top:16px;text-align:center;font-size:11px;color:var(--c-slate)}
+</style>
+</head>
+<body><div class="C">
+<div class="header"><div class="main-title">工具系统 — <em>自注册、Schema 与终端后端</em></div><div class="subtitle">Hermes Agent · 第 05 篇</div></div>
+<div class="tabs">
+  <button class="tab active" data-tab="tab0">封面</button>
+  <button class="tab" data-tab="tab1">工具系统全景</button>
+  <button class="tab" data-tab="tab2">自注册流程</button>
+  <button class="tab" data-tab="tab3">终端后端对比</button>
+  <button class="tab" data-tab="tab4">审批三级</button>
+</div>
+
+<div class="tc active" data-tab="tab0">
+  <div class="dt">工具系统</div><div class="ds">61 个工具 · 自注册 · 7 种终端后端 · 三级审批</div>
+  <div class="stage-bar">
+    <div class="stage-cell st1"><div class="stage-num">1</div><div class="stage-text"><div class="stage-title">自注册</div><div class="stage-sub">@register()</div></div></div>
+    <div class="stage-cell st2"><div class="stage-num">2</div><div class="stage-text"><div class="stage-title">Schema 生成</div><div class="stage-sub">OpenAI FC 格式</div></div></div>
+    <div class="stage-cell st3"><div class="stage-num">3</div><div class="stage-text"><div class="stage-title">安全审批</div><div class="stage-sub">三级：allow/always/deny</div></div></div>
+    <div class="stage-cell st4"><div class="stage-num">4</div><div class="stage-text"><div class="stage-title">工具执行</div><div class="stage-sub">7 种终端后端</div></div></div>
+    <div class="stage-cell st5"><div class="stage-num">5</div><div class="stage-text"><div class="stage-title">结果回传</div><div class="stage-sub">tool role message</div></div></div>
+  </div>
+  <div style="text-align:center"><span class="chip chip-t">61 个工具</span><span class="chip chip-s">52 个工具集</span><span class="chip chip-a">MCP 集成</span></div>
+</div>
+
+<div class="tc" data-tab="tab1">
+  <div class="dt">工具系统全景</div><div class="ds">自注册 → Schema → 分发 → 执行</div>
+  <div class="L l1"><div class="L-tag"><div class="L-num">1</div><div class="L-label">注册层</div></div><div class="L-body"><div class="L-title">tools/registry.py <span class="chip chip-t">中央注册表</span></div><div class="L-row"><div class="L-dot" style="background:var(--c-terra)"></div>@register() 装饰器 → 自动收集工具元数据</div><div class="L-row"><div class="L-dot" style="background:var(--c-terra)"></div>discover_builtin_tools() 导入全部工具文件</div></div><div class="L-right"><div class="L-right-title">注册方式</div><div class="L-right-item">导入即注册（零配置）</div></div></div>
+  <div class="L l2"><div class="L-tag"><div class="L-num">2</div><div class="L-label">Schema 层</div></div><div class="L-body"><div class="L-title">OpenAI Function Calling JSON Schema <span class="chip chip-s">自动生成</span></div><div class="L-row"><div class="L-dot" style="background:var(--c-sage)"></div>从 register() 参数自动生成 JSON Schema</div><div class="L-row"><div class="L-dot" style="background:var(--c-sage)"></div>每次 API 调用注入 tools 参数（20-30K tokens）</div></div><div class="L-right"><div class="L-right-title">格式</div><div class="L-right-item">OpenAI-compatible</div></div></div>
+  <div class="L l3"><div class="L-tag"><div class="L-num">3</div><div class="L-label">分发层</div></div><div class="L-body"><div class="L-title">model_tools.py · handle_function_call() <span class="chip chip-b">调度中心</span></div><div class="L-row"><div class="L-dot" style="background:var(--c-burg)"></div>解析 tool_call → 安全审批 → 执行 → 回传</div></div><div class="L-right"><div class="L-right-title">安全</div><div class="L-right-item">approval.py 三级审批</div></div></div>
+</div>
+
+<div class="tc" data-tab="tab2">
+  <div class="dt">自注册流程</div><div class="ds">一个工具文件从 import 到 ready 的完整路径</div>
+  <div class="stage-bar">
+    <div class="stage-cell st1"><div class="stage-num">1</div><div class="stage-text"><div class="stage-title">Import</div><div class="stage-sub">discover_builtin_tools()<br>导入 tools/*.py</div></div></div>
+    <div class="stage-cell st2"><div class="stage-num">2</div><div class="stage-text"><div class="stage-title">@register()</div><div class="stage-sub">装饰器收集<br>name/desc/params/toolset</div></div></div>
+    <div class="stage-cell st3"><div class="stage-num">3</div><div class="stage-text"><div class="stage-title">Registry</div><div class="stage-sub">存入全局<br>TOOL_REGISTRY dict</div></div></div>
+    <div class="stage-cell st4"><div class="stage-num">4</div><div class="stage-text"><div class="stage-title">Schema Gen</div><div class="stage-sub">生成 OpenAI FC<br>JSON Schema</div></div></div>
+    <div class="stage-cell st5"><div class="stage-num">5</div><div class="stage-text"><div class="stage-title">Ready</div><div class="stage-sub">AIAgent.tools<br>可供模型调用</div></div></div>
+  </div>
+  <div class="card card-t"><div class="card-hdr"><span class="chip chip-t">关键</span> 零配置</div><div class="card-body">新增工具只需创建 .py 文件 + @register()。无需修改任何配置文件或注册表。</div></div>
+</div>
+
+<div class="tc" data-tab="tab3">
+  <div class="dt">七种终端后端对比</div><div class="ds">统一 TerminalBackend 接口，彼此可互换</div>
+  <table class="cmp-table">
+    <tr><th>后端</th><th>隔离方式</th><th>适用场景</th><th>启动方式</th></tr>
+    <tr><td><strong>local</strong></td><td>本地进程</td><td>日常开发</td><td>subprocess</td></tr>
+    <tr><td><strong>docker</strong></td><td>Docker 容器</td><td>环境隔离</td><td>docker run</td></tr>
+    <tr><td><strong>ssh</strong></td><td>SSH 远程</td><td>远程服务器</td><td>ssh exec</td></tr>
+    <tr><td><strong>daytona</strong></td><td>Daytona 工作区</td><td>云端开发环境</td><td>Daytona API</td></tr>
+    <tr><td><strong>singularity</strong></td><td>Singularity 容器</td><td>HPC/科研环境</td><td>singularity exec</td></tr>
+    <tr><td><strong>modal</strong></td><td>Modal 云函数</td><td>无服务器计算</td><td>Modal API</td></tr>
+    <tr><td><strong>vercel</strong></td><td>Vercel 沙箱</td><td>边缘计算</td><td>Vercel API</td></tr>
+  </table>
+</div>
+
+<div class="tc" data-tab="tab4">
+  <div class="dt">安全审批三级</div><div class="ds">危险命令的审批流程</div>
+  <table class="cmp-table">
+    <tr><th>级别</th><th>含义</th><th>适用场景</th><th>有效期</th></tr>
+    <tr><td><strong>allow once</strong></td><td>本次允许</td><td>一次性安全操作</td><td>当前工具调用</td></tr>
+    <tr><td><strong>allow always</strong></td><td>记住许可</td><td>频繁安全操作</td><td>当前会话</td></tr>
+    <tr><td><strong>deny</strong></td><td>拒绝</td><td>危险操作</td><td>—</td></tr>
+  </table>
+  <div class="insight"><strong>平台差异：</strong>CLI 用交互式弹窗，Gateway 通过回调到平台适配器，ACP 在编辑器内弹窗。审批流程跨平台统一，UI 层各异。</div>
+</div>
+<div class="footer">Hermes Agent 深度拆解 · 第 05 篇 · 工具系统</div>
+</div>
+<script>(function(){var t=document.querySelectorAll('.tabs .tab');var p=document.querySelectorAll('.tc');t.forEach(function(b){b.addEventListener('click',function(){var k=b.getAttribute('data-tab');t.forEach(function(x){x.classList.remove('active')});p.forEach(function(x){x.classList.remove('active')});b.classList.add('active');var a=document.querySelector('.tc[data-tab="'+k+'"]');if(a)a.classList.add('active')})})})();</script>
+</body></html>
