@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes 架构全景 — 五入口与六层子系统</title>
+<style>
+/* ===== 编辑排版风色彩体系 ===== */
+:root {
+  --c-bg: #faf8f5; --c-canvas: #fff; --c-ink: #2d2d2d;
+  --c-terra: #c75b39; --c-terra-light: #fdf0ea;
+  --c-sage: #4a7c59; --c-sage-light: #eef5ef;
+  --c-slate: #5b6b7a; --c-slate-light: #f0f3f5;
+  --c-burg: #8b3a3a; --c-burg-light: #fdf2f2;
+  --c-amber: #b8751e; --c-amber-light: #fef8f0;
+  --c-moss: #5c7a4a; --c-moss-light: #f4f7f0;
+  --c-border: #e5e0d8; --c-border-light: #f0ece6;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-serif: Georgia, 'Times New Roman', 'Songti SC', 'SimSun', serif;
+  --font-mono: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:var(--font-sans); background:var(--c-bg); color:var(--c-ink);
+  display:flex; justify-content:center; padding:40px 20px; min-height:100vh;
+}
+.C{
+  background:var(--c-canvas); border:1px solid var(--c-border);
+  box-shadow: 0 1px 3px rgba(0,0,0,.04); padding:40px 44px; width:1280px; min-width:1280px;
+}
+.header{margin-bottom:32px;text-align:center}
+.main-title{font-family:var(--font-serif);font-size:28px;font-weight:700;color:var(--c-ink);margin-bottom:4px;letter-spacing:-0.3px}
+.main-title em{font-style:normal;color:var(--c-terra)}
+.subtitle{font-size:14px;color:var(--c-slate);font-weight:400}
+
+/* Tab System */
+.tabs{display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid var(--c-border);flex-wrap:wrap}
+.tab{padding:10px 18px;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:13px;font-weight:500;color:var(--c-slate);font-family:var(--font-sans);transition:all 0.2s;letter-spacing:0.2px}
+.tab:hover{color:var(--c-ink)}
+.tab.active{color:var(--c-terra);border-bottom-color:var(--c-terra);font-weight:600}
+.tc{display:none}
+.tc.active{display:block;border:1px solid var(--c-border);padding:28px 24px 24px;background:var(--c-canvas);box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.dt{font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--c-ink);margin-bottom:4px;text-align:center}
+.ds{font-size:14px;color:var(--c-slate);text-align:center;margin-bottom:24px;line-height:1.6}
+
+/* Chip */
+.chip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:2px;display:inline-block;white-space:nowrap;letter-spacing:0.3px}
+.chip-t{background:var(--c-terra-light);color:var(--c-terra)}
+.chip-s{background:var(--c-sage-light);color:var(--c-sage)}
+.chip-b{background:var(--c-burg-light);color:var(--c-burg)}
+.chip-a{background:var(--c-amber-light);color:var(--c-amber)}
+.chip-m{background:var(--c-moss-light);color:var(--c-moss)}
+.chip-sl{background:var(--c-slate-light);color:var(--c-slate)}
+
+/* Card System */
+.card{border:1px solid var(--c-border);border-left:4px solid var(--c-border);margin-bottom:6px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.card-hdr{padding:9px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;background:var(--c-border-light);border-bottom:1px solid var(--c-border)}
+.card-body{padding:12px 14px;font-size:13px;line-height:1.6;background:var(--c-canvas)}
+.card-t{border-left-color:var(--c-terra)}.card-t .card-hdr{background:var(--c-terra-light);color:var(--c-terra)}
+.card-s{border-left-color:var(--c-sage)}.card-s .card-hdr{background:var(--c-sage-light);color:var(--c-sage)}
+.card-b{border-left-color:var(--c-burg)}.card-b .card-hdr{background:var(--c-burg-light);color:var(--c-burg)}
+.card-a{border-left-color:var(--c-amber)}.card-a .card-hdr{background:var(--c-amber-light);color:var(--c-amber)}
+.card-m{border-left-color:var(--c-moss)}.card-m .card-hdr{background:var(--c-moss-light);color:var(--c-moss)}
+
+/* Layer System */
+.L{display:flex;border:1px solid var(--c-border);margin-bottom:2px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.L-tag{width:110px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 8px;border-right:1px solid var(--c-border)}
+.L-num{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:15px;font-weight:700;margin-bottom:4px}
+.L-label{font-size:12px;font-weight:700;text-align:center;line-height:1.2;font-family:var(--font-sans)}
+.L-body{flex:1;padding:12px 16px;display:flex;flex-direction:column;gap:4px}
+.L-title{font-size:14px;font-weight:700;color:var(--c-ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.L-row{display:flex;align-items:center;gap:6px;font-size:13px;line-height:1.5}
+.L-dot{width:6px;height:6px;flex-shrink:0}
+.L-name{font-weight:700;font-family:var(--font-mono);font-size:12px;min-width:140px;flex-shrink:0;color:var(--c-slate)}
+.L-right{width:210px;flex-shrink:0;padding:10px 14px;border-left:1px solid var(--c-border);display:flex;flex-direction:column;justify-content:center;gap:3px;background:var(--c-border-light)}
+.L-right-title{font-size:11px;font-weight:700;color:var(--c-ink);margin-bottom:1px}
+.L-right-item{font-size:12px;color:var(--c-slate);line-height:1.4}
+
+.L.l1 .L-tag{background:var(--c-terra-light)}.L.l1 .L-label{color:var(--c-terra)}.L.l1 .L-num{background:var(--c-terra);color:#fff}
+.L.l2 .L-tag{background:#fef5f0}.L.l2 .L-label{color:#b8542e}.L.l2 .L-num{background:#d4734a;color:#fff}
+.L.l3 .L-tag{background:#fef0e8}.L.l3 .L-label{color:#a04528}.L.l3 .L-num{background:#b8542e;color:#fff}
+.L.l4 .L-tag{background:var(--c-sage-light)}.L.l4 .L-label{color:var(--c-sage)}.L.l4 .L-num{background:var(--c-sage);color:#fff}
+.L.l5 .L-tag{background:var(--c-slate-light)}.L.l5 .L-label{color:var(--c-slate)}.L.l5 .L-num{background:var(--c-slate);color:#fff}
+.L.l6 .L-tag{background:var(--c-amber-light)}.L.l6 .L-label{color:var(--c-amber)}.L.l6 .L-num{background:var(--c-amber);color:#fff}
+
+/* Flow Row */
+.flow-row{display:flex;align-items:center;gap:0;margin:16px 0;flex-wrap:wrap}
+.flow-node{flex:1;min-width:100px;text-align:center;padding:14px 10px;border:1px solid var(--c-border);background:var(--c-canvas);box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.flow-node .fn-title{font-size:14px;font-weight:700;color:var(--c-ink);margin-bottom:2px}
+.flow-node .fn-sub{font-size:11px;color:var(--c-slate);line-height:1.4}
+.flow-arrow{padding:0 6px;color:var(--c-terra);font-size:18px;font-weight:700;flex-shrink:0}
+
+/* Comparison Table */
+.cmp-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px}
+.cmp-table th{background:var(--c-terra-light);color:var(--c-terra);padding:10px 12px;text-align:left;font-weight:700;border:1px solid var(--c-border);font-size:12px}
+.cmp-table td{padding:9px 12px;border:1px solid var(--c-border);line-height:1.5}
+.cmp-table tr:nth-child(even) td{background:var(--c-border-light)}
+
+/* Insight Block */
+.insight{border-left:4px solid var(--c-sage);background:var(--c-sage-light);padding:14px 18px;margin:16px 0;font-size:13px;line-height:1.7}
+.insight strong{color:var(--c-sage)}
+
+/* Footer */
+.footer{margin-top:16px;text-align:center;font-size:11px;color:var(--c-slate);line-height:1.6}
+</style>
+</head>
+<body>
+<div class="C">
+
+<div class="header">
+  <div class="main-title">Hermes 架构全景 — <em>五入口与六层子系统</em></div>
+  <div class="subtitle">Hermes Agent · 第 01 篇 · 架构级深度拆解</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="tab0">封面</button>
+  <button class="tab" data-tab="tab1">架构全景</button>
+  <button class="tab" data-tab="tab2">CLI 启动流程</button>
+  <button class="tab" data-tab="tab3">Gateway 启动流程</button>
+  <button class="tab" data-tab="tab4">五入口对比</button>
+  <button class="tab" data-tab="tab5">配置层级</button>
+</div>
+
+<!-- ===== Tab 0: 封面 ===== -->
+<div class="tc active" data-tab="tab0">
+  <div class="dt">Hermes Agent 深度拆解</div>
+  <div class="ds">
+    第 01 篇 · 架构全景<br>
+    五入口与六层子系统
+  </div>
+  <div class="flow-row">
+    <div class="flow-node">
+      <div class="fn-title">CLI</div>
+      <div class="fn-sub">交互式终端<br>~11.5k LOC</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node" style="border:2px solid var(--c-terra);background:var(--c-terra-light)">
+      <div class="fn-title" style="color:var(--c-terra)">AIAgent</div>
+      <div class="fn-sub">六层内核<br>~13.7k LOC</div>
+    </div>
+    <div class="flow-arrow">←</div>
+    <div class="flow-node">
+      <div class="fn-title">Gateway</div>
+      <div class="fn-sub">20 平台消息网关<br>~12.2k LOC</div>
+    </div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-node">
+      <div class="fn-title">ACP</div>
+      <div class="fn-sub">编辑器集成<br>VS Code / Zed / JetBrains</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node" style="border:2px solid var(--c-terra);background:var(--c-terra-light)">
+      <div class="fn-title" style="color:var(--c-terra)">AIAgent</div>
+      <div class="fn-sub">六层内核<br>~13.7k LOC</div>
+    </div>
+    <div class="flow-arrow">←</div>
+    <div class="flow-node">
+      <div class="fn-title">Batch Runner</div>
+      <div class="fn-sub">并行轨迹生成<br>~1.3k LOC</div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:16px">
+    <span class="chip chip-s">单一内核</span>
+    <span class="chip chip-t">多态入口</span>
+    <span class="chip chip-a">六层管道</span>
+    <span class="chip chip-sl">同步模型 · 异步适配</span>
+  </div>
+  <div class="insight">
+    <strong>核心命题：</strong>Hermes 的多入口架构证明，Agent 系统的内核逻辑（Prompt 组装、Provider 路由、工具分发、上下文压缩、记忆管理、会话持久化）与 I/O 适配层（CLI/Gateway/ACP/Batch/API）可以完全解耦。五个入口共享同一个 <code>AIAgent</code> 实例，差异仅在于输入来源和输出方向的适配。
+  </div>
+</div>
+
+<!-- ===== Tab 1: 架构全景 ===== -->
+<div class="tc" data-tab="tab1">
+  <div class="dt">五入口与六层子系统全貌</div>
+  <div class="ds">五个入口（上）共享六层内核（中），底层为持久化与工具后端</div>
+
+  <div class="L l6">
+    <div class="L-tag"><div class="L-num">五</div><div class="L-label">多态入口</div></div>
+    <div class="L-body">
+      <div class="L-row">
+        <div class="L-dot" style="background:var(--c-terra)"></div>
+        <span class="L-name">cli.py</span>
+        <span>交互式终端 REPL（~11.5k LOC）</span>
+      </div>
+      <div class="L-row">
+        <div class="L-dot" style="background:#d4734a"></div>
+        <span class="L-name">gateway/run.py</span>
+        <span>20 平台消息网关（~12.2k LOC）</span>
+      </div>
+      <div class="L-row">
+        <div class="L-dot" style="background:var(--c-sage)"></div>
+        <span class="L-name">acp_adapter/</span>
+        <span>编辑器集成·JSON-RPC stdio</span>
+      </div>
+      <div class="L-row">
+        <div class="L-dot" style="background:var(--c-slate)"></div>
+        <span class="L-name">batch_runner.py</span>
+        <span>并行批处理·轨迹生成（~1.3k LOC）</span>
+      </div>
+      <div class="L-row">
+        <div class="L-dot" style="background:var(--c-moss)"></div>
+        <span class="L-name">api_server</span>
+        <span>REST API·Gateway 子模块</span>
+      </div>
+    </div>
+    <div class="L-right">
+      <div class="L-right-title">共享内核</div>
+      <div class="L-right-item">AIAgent 类</div>
+      <div class="L-right-item">run_agent.py</div>
+      <div class="L-right-item">~13.7k LOC</div>
+    </div>
+  </div>
+
+  <div class="L l1">
+    <div class="L-tag"><div class="L-num">1</div><div class="L-label">Prompt Builder</div></div>
+    <div class="L-body">
+      <div class="L-title">System Prompt 组装 <span class="chip chip-t">prompt_builder.py</span></div>
+      <div class="L-row"><div class="L-dot" style="background:var(--c-terra)"></div>SOUL.md 身份 + AGENTS.md 项目指令</div>
+      <div class="L-row"><div class="L-dot" style="background:var(--c-terra)"></div>MEMORY.md / USER.md / Skill 内容</div>
+      <div class="L-row"><div class="L-dot" style="background:var(--c-terra)"></div>Platform Hints + Memory Context + Ephemeral Prompt</div>
+    </div>
+    <div class="L-right">
+      <div class="L-right-title">组装顺序</div>
+      <div class="L-right-item">固定模板 → 身份 → 指令 → 知识 → 运行时注入</div>
+    </div>
+  </div>
+
+  <div class="L l2">
+    <div class="L-tag"><div class="L-num">2</div><div class="L-label">Provider Resolution</div></div>
+    <div class="L-body">
+      <div class="L-title">模型与 API 路由 <span class="chip chip-sl">runtime_provider.py</span></div>
+      <div class="L-row"><div class="L-dot" style="background:#d4734a"></div>30+ Provider 统一路由</div>
+      <div class="L-row"><div class="L-dot" style="background:#d4734a"></div>4 种 API 模式：chat_completions / codex_responses / anthropic_messages / bedrock_converse</div>
+    </div>
+    <div class="L-right">
+      <div class="L-right-title">解析链</div>
+      <div class="L-right-item">config.yaml → env → 自动探测</div>
+    </div>
+  </div>
+
+  <div class="L l3">
+    <div class="L-tag"><div class="L-num">3</div><div class="L-label">Tool Dispatch</div></div>
+    <div class="L-body">
+      <div class="L-title">工具发现与分发 <span class="chip chip-m">model_tools.py ~1k LOC</span></div>
+      <div class="L-row"><div class="L-dot" style="background:#b8542e"></div>61 个工具 · 52 个工具集 · MCP 动态工具</div>
+      <div class="L-row"><div class="L-dot" style="background:#b8542e"></div>Schema 生成 → 安全检查 → 执行 → 结果回传</div>
+    </div>
+    <div class="L-right">
+      <div class="L-right-title">安全策略</div>
+      <div class="L-right-item">审批三级：allow once / always / deny</div>
+    </div>
+  </div>
+
+  <div class="L l4">
+    <div class="L-tag"><div class="L-num">4</div><div class="L-label">Context Compression</div></div>
+    <div class="L-body">
+      <div class="L-title">上下文智能压缩 <span class="chip chip-s">context_compressor.py</span></div>
+      <div class="L-row"><div class="L-dot" style="background:var(--c-sage)"></div>损失摘要：主模型 → fallback → 纯截断三级降级</div>
+    </div>
+    <div class="L-right">
+      <div class="L-right-title">触发条件</div>
+      <div class="L-right-item">对话超出上下文窗口</div>
+    </div>
+  </div>
+
+  <div class="L l5">
+    <div class="L-tag"><div class="L-num">5</div><div class="L-label">Memory Mgmt</div></div>
+    <div class="L-body">
+      <div class="L-title">双层记忆编排 <span class="chip chip-sl">memory_manager.py</span></div>
+      <div class="L-row"><div class="L-dot" style="background:var(--c-slate)"></div>Built-in（MEMORY.md + USER.md）+ External Provider（8 个可插拔）</div>
+    </div>
+    <div class="L-right">
+      <div class="L-right-title">编排模式</div>
+      <div class="L-right-item">广播 + 容错隔离</div>
+    </div>
+  </div>
+
+  <div class="L l6">
+    <div class="L-tag"><div class="L-num">6</div><div class="L-label">Session Persistence</div></div>
+    <div class="L-body">
+      <div class="L-title">会话持久化 <span class="chip chip-a">hermes_state.py ~2k LOC</span></div>
+      <div class="L-row"><div class="L-dot" style="background:var(--c-amber)"></div>SQLite + FTS5 全文搜索</div>
+      <div class="L-row"><div class="L-dot" style="background:var(--c-amber)"></div>search / fork / export / list 操作</div>
+    </div>
+    <div class="L-right">
+      <div class="L-right-title">核心能力</div>
+      <div class="L-right-item">完整会话可审计性</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab 2: CLI 启动流程 ===== -->
+<div class="tc" data-tab="tab2">
+  <div class="dt">CLI 启动流程</div>
+  <div class="ds">从命令行到 AIAgent 实例的完整链路</div>
+  <div class="flow-row">
+    <div class="flow-node" style="background:var(--c-terra-light);border-color:var(--c-terra)">
+      <div class="fn-title">hermes</div>
+      <div class="fn-sub">命令行入口</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="fn-title">main()</div>
+      <div class="fn-sub">hermes_cli/main.py<br>子命令解析</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="fn-title">HermesCLI</div>
+      <div class="fn-sub">加载配置<br>Provider 解析</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="fn-title">AIAgent</div>
+      <div class="fn-sub">构造六层内核<br>进入 REPL</div>
+    </div>
+  </div>
+
+  <div class="card card-t" style="margin-top:20px">
+    <div class="card-hdr"><span class="chip chip-t">Step 1</span> 配置加载</div>
+    <div class="card-body">
+      读取 ~/.hermes/config.yaml → 解析 DEFAULT_CONFIG 合并 → 检测配置迁移（migrate_config）
+    </div>
+  </div>
+  <div class="card card-t">
+    <div class="card-hdr"><span class="chip chip-t">Step 2</span> Provider 解析</div>
+    <div class="card-body">
+      runtime_provider.py 确定当前 provider → API mode → 凭证来源 → 模型选择
+    </div>
+  </div>
+  <div class="card card-t">
+    <div class="card-hdr"><span class="chip chip-t">Step 3</span> AIAgent 构造</div>
+    <div class="card-body">
+      六层内核依次组装：Prompt Builder → Provider Resolution → Tool Dispatch → Compression → Memory → Persistence
+    </div>
+  </div>
+  <div class="card card-t">
+    <div class="card-hdr"><span class="chip chip-t">Step 4</span> REPL 循环</div>
+    <div class="card-body">
+      read user input → AIAgent.run_conversation() → display response → loop。支持 /model /skills /memory 等斜杠命令。
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab 3: Gateway 启动流程 ===== -->
+<div class="tc" data-tab="tab3">
+  <div class="dt">Gateway 启动流程</div>
+  <div class="ds">从启动命令到 20 平台消息就绪的完整链路</div>
+  <div class="flow-row">
+    <div class="flow-node" style="background:var(--c-sage-light);border-color:var(--c-sage)">
+      <div class="fn-title">hermes gateway start</div>
+      <div class="fn-sub">启动命令</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="fn-title">main()</div>
+      <div class="fn-sub">gateway/run.py<br>argparse 解析</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="fn-title">start_gateway()</div>
+      <div class="fn-sub">asyncio 事件循环<br>加载 GatewayConfig</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="fn-title">20 Adapters</div>
+      <div class="fn-sub">Telegram/Discord/Slack/<br>WhatsApp/微信/飞书...</div>
+    </div>
+  </div>
+
+  <div class="card card-s" style="margin-top:20px">
+    <div class="card-hdr"><span class="chip chip-s">关键</span> Platform Adapter 模式</div>
+    <div class="card-body">
+      每个消息平台实现 on_message() + send_message() 接口 → 启动时建立 WebSocket/长轮询/Webhook → 收到消息后创建 AIAgent 实例 → run_conversation() → 通过 adapter 返回消息
+    </div>
+  </div>
+  <div class="card card-s">
+    <div class="card-hdr"><span class="chip chip-s">关键</span> 会话保持</div>
+    <div class="card-body">
+      gateway/session.py 的 SessionStore 维护跨会话的对话历史。每个平台用户有独立的 session key（如 agent:main:telegram:dm:123），确保多用户并发时历史不会混淆。
+    </div>
+  </div>
+  <div class="card card-s">
+    <div class="card-hdr"><span class="chip chip-s">关键</span> Cron 集成</div>
+    <div class="card-body">
+      Gateway 内置 cron/ 调度器。定时任务和 Curator（自主知识管家）扫描由 cron ticker 触发，复用 Gateway 的 AIAgent 创建流程。
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab 4: 五入口对比 ===== -->
+<div class="tc" data-tab="tab4">
+  <div class="dt">五入口对比矩阵</div>
+  <div class="ds">五种入口各有专攻，共享同一个 AIAgent 内核</div>
+  <table class="cmp-table">
+    <tr><th>维度</th><th>CLI</th><th>Gateway</th><th>ACP</th><th>Batch Runner</th><th>API Server</th></tr>
+    <tr>
+      <td><strong>使用场景</strong></td>
+      <td>交互式开发</td>
+      <td>多平台客服/自动化</td>
+      <td>编辑器 Coding Agent</td>
+      <td>RL 训练数据生成</td>
+      <td>系统集成</td>
+    </tr>
+    <tr>
+      <td><strong>进程模型</strong></td>
+      <td>前台交互</td>
+      <td>asyncio 长驻</td>
+      <td>stdio 子进程</td>
+      <td>multiprocessing</td>
+      <td>Gateway 子模块</td>
+    </tr>
+    <tr>
+      <td><strong>并发能力</strong></td>
+      <td>单会话</td>
+      <td>多平台多会话</td>
+      <td>多编辑器会话</td>
+      <td>N workers 并行</td>
+      <td>HTTP 并发</td>
+    </tr>
+    <tr>
+      <td><strong>工具集</strong></td>
+      <td>全量</td>
+      <td>全量</td>
+      <td>hermes-acp 精选</td>
+      <td>按分布抽样</td>
+      <td>可配置</td>
+    </tr>
+    <tr>
+      <td><strong>会话保持</strong></td>
+      <td>SessionDB</td>
+      <td>SessionStore</td>
+      <td>内存（进程级）</td>
+      <td>无</td>
+      <td>SessionStore</td>
+    </tr>
+    <tr>
+      <td><strong>Context Files</strong></td>
+      <td>加载</td>
+      <td>加载</td>
+      <td>加载</td>
+      <td>skip</td>
+      <td>加载</td>
+    </tr>
+  </table>
+  <div class="insight">
+    <strong>设计启示：</strong>五个入口不是五个独立的应用，而是同一个 <code>AIAgent</code> 的五种 I/O 适配方式。CLI 适配 stdin/stdout，Gateway 适配消息事件/平台回复，ACP 适配 JSON-RPC stdio，Batch Runner 适配文件 I/O，API Server 适配 HTTP。新增第六个入口只需实现新的 I/O 适配层，无需修改内核。
+  </div>
+</div>
+
+<!-- ===== Tab 5: 配置层级 ===== -->
+<div class="tc" data-tab="tab5">
+  <div class="dt">配置层级 — 四层覆盖模型</div>
+  <div class="ds">从最通用到最具体，后一层总是覆盖前一层</div>
+
+  <div class="L l1">
+    <div class="L-tag"><div class="L-num">1</div><div class="L-label">默认值</div></div>
+    <div class="L-body">
+      <div class="L-title">DEFAULT_CONFIG <span class="chip chip-sl">hermes_cli/config.py</span></div>
+      <div class="L-row"><div class="L-dot" style="background:var(--c-terra)"></div>内置的全局默认配置</div>
+      <div class="L-row"><div class="L-dot" style="background:var(--c-terra)"></div>包含所有可选环境变量定义</div>
+    </div>
+    <div class="L-right">
+      <div class="L-right-title">覆盖范围</div>
+      <div class="L-right-item">最通用</div>
+    </div>
+  </div>
+
+  <div class="L l2">
+    <div class="L-tag"><div class="L-num">2</div><div class="L-label">用户配置</div></div>
+    <div class="L-body">
+      <div class="L-title">~/.hermes/config.yaml <span class="chip chip-sl">用户级覆盖</span></div>
+      <div class="L-row"><div class="L-dot" style="background:#d4734a"></div>适用于所有会话的用户偏好</div>
+      <div class="L-row"><div class="L-dot" style="background:#d4734a"></div>配置迁移由 migrate_config() 自动处理</div>
+    </div>
+    <div class="L-right">
+      <div class="L-right-title">覆盖范围</div>
+      <div class="L-right-item">全会话</div>
+    </div>
+  </div>
+
+  <div class="L l3">
+    <div class="L-tag"><div class="L-num">3</div><div class="L-label">环境变量</div></div>
+    <div class="L-body">
+      <div class="L-title">.env / 环境变量 <span class="chip chip-sl">运行时覆盖</span></div>
+      <div class="L-row"><div class="L-dot" style="background:#b8542e"></div>适用于当前进程的环境变量</div>
+      <div class="L-row"><div class="L-dot" style="background:#b8542e"></div>包括 Provider 凭证（API Key 等）</div>
+    </div>
+    <div class="L-right">
+      <div class="L-right-title">覆盖范围</div>
+      <div class="L-right-item">当前进程</div>
+    </div>
+  </div>
+
+  <div class="L l6">
+    <div class="L-tag"><div class="L-num">4</div><div class="L-label">调用参数</div></div>
+    <div class="L-body">
+      <div class="L-title">CLI 参数 / API 参数 <span class="chip chip-a">调用级覆盖</span></div>
+      <div class="L-row"><div class="L-dot" style="background:var(--c-amber)"></div>仅本次会话生效</div>
+      <div class="L-row"><div class="L-dot" style="background:var(--c-amber)"></div>--model, --provider, --base-url 等</div>
+    </div>
+    <div class="L-right">
+      <div class="L-right-title">覆盖范围</div>
+      <div class="L-right-item">本次会话</div>
+    </div>
+  </div>
+
+  <div class="insight" style="margin-top:16px">
+    <strong>覆盖语义：</strong>四层配置没有"合并"语义，只有"覆盖"语义。后一层总是替换前一层的同名字段。这种设计避免了多层配置合并带来的歧义性——任何时候，最终生效的值都可以通过追踪到最具体的层级来唯一确定。
+  </div>
+</div>
+
+<div class="footer">Hermes Agent 深度拆解 · 第 01 篇 · 架构全景 · 五入口与六层子系统</div>
+</div>
+
+<script>
+(function(){
+  var tabs = document.querySelectorAll('.tabs .tab');
+  var panes = document.querySelectorAll('.tc');
+  tabs.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var key = btn.getAttribute('data-tab');
+      tabs.forEach(function(b){ b.classList.remove('active'); });
+      panes.forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      var pane = document.querySelector('.tc[data-tab="' + key + '"]');
+      if(pane) pane.classList.add('active');
+    });
+  });
+})();
+</script>
+</body>
+</html>
