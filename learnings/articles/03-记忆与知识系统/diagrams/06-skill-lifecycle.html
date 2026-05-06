@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>06 · Skill 生命周期状态机</title>
+  <style>
+    :root {
+      --c-bg: #fefcf3; --c-canvas: #fff; --c-yellow: #f5c518;
+      --c-yellow-light: #fff8dc; --c-black: #1a1a1a;
+      --c-gray: #8a7e6b; --c-gray-light: #d4ccb8;
+      --c-red: #e05555; --c-green: #4caf50;
+      --c-green-light: #e8f5e9;
+      --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --font-mono: 'SF Mono', Monaco, Consolas, monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--c-bg); font-family: var(--font-ui);
+      color: var(--c-black); display: flex; align-items: center;
+      justify-content: center; min-height: 100vh; padding: 32px;
+    }
+    .diagram-canvas {
+      background: var(--c-canvas); border: 2px solid var(--c-gray-light);
+      border-radius: 4px; width: 960px; height: 540px;
+      padding: 32px; display: flex; flex-direction: column;
+      position: relative;
+    }
+    .header { margin-bottom: 16px; }
+    .header h1 { font-size: 22px; font-weight: 700; }
+    .header p { font-size: 12px; color: var(--c-gray); margin-top: 2px; letter-spacing: 0.5px; }
+
+    /* State machine layout using SVG */
+    .state-svg {
+      flex: 1; width: 100%;
+    }
+
+    /* Legend */
+    .legend {
+      position: absolute; bottom: 28px; right: 32px;
+      display: flex; gap: 14px; font-size: 10px; color: var(--c-gray);
+    }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .legend-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+    }
+
+    .footer-note {
+      position: absolute; bottom: 10px; left: 32px; right: 32px;
+      text-align: center; font-size: 11px; color: var(--c-gray);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="diagram-canvas">
+    <div class="header">
+      <h1>Skill 生命周期状态机</h1>
+      <p>SIX-STATE LIFECYCLE: CREATED → USED → GRADED / IMPROVED → CONSOLIDATED / ARCHIVED</p>
+    </div>
+
+    <svg class="state-svg" viewBox="0 0 896 380">
+      <!-- Arrow markers -->
+      <defs>
+        <marker id="arrow-black" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0 0 L8 3 L0 6" fill="none" stroke="#1a1a1a" stroke-width="1.5"/>
+        </marker>
+        <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0 0 L8 3 L0 6" fill="none" stroke="#4caf50" stroke-width="1.5"/>
+        </marker>
+        <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0 0 L8 3 L0 6" fill="none" stroke="#8a7e6b" stroke-width="1.5"/>
+        </marker>
+      </defs>
+
+      <!-- State: created -->
+      <rect x="40" y="50" width="150" height="80" rx="12" fill="#fffdf0" stroke="#f5c518" stroke-width="2.5"/>
+      <text x="115" y="82" text-anchor="middle" font-size="18" font-weight="800" fill="#1a1a1a">created</text>
+      <text x="115" y="102" text-anchor="middle" font-size="11" fill="#8a7e6b">创建</text>
+      <text x="115" y="118" text-anchor="middle" font-size="9" fill="#8a7e6b">skill_manage 创建</text>
+
+      <!-- State: used -->
+      <rect x="280" y="50" width="150" height="80" rx="12" fill="#fffdf0" stroke="#e8c547" stroke-width="2.5"/>
+      <text x="355" y="82" text-anchor="middle" font-size="18" font-weight="800" fill="#1a1a1a">used</text>
+      <text x="355" y="102" text-anchor="middle" font-size="11" fill="#8a7e6b">使用</text>
+      <text x="355" y="118" text-anchor="middle" font-size="9" fill="#8a7e6b">Agent 加载使用</text>
+
+      <!-- State: graded -->
+      <rect x="560" y="30" width="150" height="80" rx="12" fill="#fffdf0" stroke="#d4a017" stroke-width="2.5"/>
+      <text x="635" y="62" text-anchor="middle" font-size="18" font-weight="800" fill="#1a1a1a">graded</text>
+      <text x="635" y="82" text-anchor="middle" font-size="11" fill="#8a7e6b">评分</text>
+      <text x="635" y="98" text-anchor="middle" font-size="9" fill="#8a7e6b">Review Fork 打分</text>
+
+      <!-- State: improved -->
+      <rect x="560" y="160" width="150" height="80" rx="12" fill="#fffdf0" stroke="#d4a017" stroke-width="2.5"/>
+      <text x="635" y="192" text-anchor="middle" font-size="18" font-weight="800" fill="#1a1a1a">improved</text>
+      <text x="635" y="212" text-anchor="middle" font-size="11" fill="#8a7e6b">改进</text>
+      <text x="635" y="228" text-anchor="middle" font-size="9" fill="#8a7e6b">Agent 或 Fork 建议</text>
+
+      <!-- State: consolidated -->
+      <rect x="280" y="260" width="150" height="80" rx="12" fill="#e8f5e9" stroke="#4caf50" stroke-width="2.5"/>
+      <text x="355" y="292" text-anchor="middle" font-size="18" font-weight="800" fill="#1a1a1a">consolidated</text>
+      <text x="355" y="312" text-anchor="middle" font-size="11" fill="#4caf50">合并</text>
+      <text x="355" y="328" text-anchor="middle" font-size="9" fill="#8a7e6b">归入伞技能，内容保留</text>
+
+      <!-- State: archived -->
+      <rect x="40" y="260" width="150" height="80" rx="12" fill="#f5f0e8" stroke="#8a7e6b" stroke-width="2.5" stroke-dasharray="6,3"/>
+      <text x="115" y="292" text-anchor="middle" font-size="18" font-weight="800" fill="#1a1a1a">archived</text>
+      <text x="115" y="312" text-anchor="middle" font-size="11" fill="#8a7e6b">归档</text>
+      <text x="115" y="328" text-anchor="middle" font-size="9" fill="#8a7e6b">暂不需要，可恢复</text>
+
+      <!-- Transitions -->
+      <!-- created → used -->
+      <line x1="190" y1="90" x2="278" y2="90" stroke="#1a1a1a" stroke-width="2" marker-end="url(#arrow-black)"/>
+      <text x="234" y="83" text-anchor="middle" font-size="10" fill="#8a7e6b" font-weight="600">加载</text>
+
+      <!-- used → graded -->
+      <line x1="430" y1="72" x2="558" y2="68" stroke="#1a1a1a" stroke-width="2" marker-end="url(#arrow-black)"/>
+      <text x="494" y="62" text-anchor="middle" font-size="10" fill="#8a7e6b" font-weight="600">审视</text>
+
+      <!-- used → improved -->
+      <line x1="430" y1="108" x2="558" y2="185" stroke="#1a1a1a" stroke-width="2" marker-end="url(#arrow-black)"/>
+      <text x="505" y="148" text-anchor="middle" font-size="10" fill="#8a7e6b" font-weight="600">改进</text>
+
+      <!-- graded → consolidated -->
+      <line x1="590" y1="112" x2="400" y2="258" stroke="#4caf50" stroke-width="2" marker-end="url(#arrow-green)"/>
+      <text x="480" y="188" text-anchor="middle" font-size="10" fill="#4caf50" font-weight="600">合并</text>
+
+      <!-- improved → consolidated -->
+      <line x1="590" y1="240" x2="428" y2="275" stroke="#4caf50" stroke-width="2" marker-end="url(#arrow-green)"/>
+      <text x="518" y="268" text-anchor="middle" font-size="10" fill="#4caf50" font-weight="600">合并</text>
+
+      <!-- consolidated → archived -->
+      <line x1="278" y1="300" x2="192" y2="300" stroke="#8a7e6b" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrow-gray)"/>
+      <text x="234" y="293" text-anchor="middle" font-size="10" fill="#8a7e6b" font-weight="600">归档</text>
+
+      <!-- graded → improved (self-loop visual hint) -->
+      <path d="M712 55 Q740 55 740 80 Q740 105 712 170" fill="none" stroke="#d4a017" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-gray)"/>
+      <text x="752" y="110" font-size="9" fill="#d4a017" font-weight="600">再改进</text>
+
+      <!-- agentskills.io badge -->
+      <rect x="740" y="280" width="130" height="60" rx="8" fill="none" stroke="#d4a017" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="805" y="305" text-anchor="middle" font-size="11" font-weight="700" fill="#8a6c0f">agentskills.io</text>
+      <text x="805" y="322" text-anchor="middle" font-size="9" fill="#8a7e6b">开放标准</text>
+      <text x="805" y="334" text-anchor="middle" font-size="9" fill="#8a7e6b">YAML frontmatter</text>
+    </svg>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#f5c518;"></div>创建/使用</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#d4a017;"></div>评分/改进</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#4caf50;"></div>合并</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#8a7e6b;"></div>归档</div>
+    </div>
+
+    <div class="footer-note">Review Fork 每轮后审视 → rubric 四维度评分 → 五种决策：keep / patch / create / consolidate / archive</div>
+  </div>
+</body>
+</html>

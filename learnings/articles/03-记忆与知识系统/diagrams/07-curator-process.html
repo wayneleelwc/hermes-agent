@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>07 · Curator 自主审查流程</title>
+  <style>
+    :root {
+      --c-bg: #fefcf3; --c-canvas: #fff; --c-yellow: #f5c518;
+      --c-yellow-light: #fff8dc; --c-black: #1a1a1a;
+      --c-gray: #8a7e6b; --c-gray-light: #d4ccb8;
+      --c-red: #e05555; --c-green: #4caf50;
+      --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --font-mono: 'SF Mono', Monaco, Consolas, monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--c-bg); font-family: var(--font-ui);
+      color: var(--c-black); display: flex; align-items: center;
+      justify-content: center; min-height: 100vh; padding: 32px;
+    }
+    .diagram-canvas {
+      background: var(--c-canvas); border: 2px solid var(--c-gray-light);
+      border-radius: 4px; width: 960px; height: 540px;
+      padding: 28px 32px; display: flex; flex-direction: column;
+    }
+    .header { margin-bottom: 14px; }
+    .header h1 { font-size: 22px; font-weight: 700; }
+    .header p { font-size: 12px; color: var(--c-gray); margin-top: 2px; letter-spacing: 0.5px; }
+
+    /* Two-row layout */
+    .main { flex: 1; display: flex; flex-direction: column; gap: 16px; }
+
+    /* Row 1: 5-step flow */
+    .flow-row { display: flex; gap: 6px; align-items: stretch; }
+    .step {
+      flex: 1; border: 2px solid var(--c-gray-light);
+      border-radius: 10px; padding: 10px 12px;
+      display: flex; flex-direction: column; justify-content: center;
+      text-align: center;
+    }
+    .step-num {
+      font-size: 10px; font-family: var(--font-mono);
+      font-weight: 700; color: var(--c-gray); margin-bottom: 4px;
+    }
+    .step-title {
+      font-size: 14px; font-weight: 700; margin-bottom: 4px;
+    }
+    .step-desc {
+      font-size: 10px; color: var(--c-gray); line-height: 1.4;
+    }
+    .step.highlight { border-color: var(--c-yellow); background: #fffdf0; }
+
+    .flow-arrow {
+      display: flex; align-items: center; justify-content: center;
+      width: 20px;
+    }
+    .flow-arrow svg { width: 16px; height: 12px; }
+
+    /* Row 2: Three-layer classification signals */
+    .signals-section { }
+    .signals-title {
+      font-size: 14px; font-weight: 700; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .signals-title::before {
+      content: ''; display: inline-block;
+      width: 4px; height: 16px; background: var(--c-yellow);
+      border-radius: 2px;
+    }
+
+    .signals {
+      display: flex; gap: 10px;
+    }
+    .signal {
+      flex: 1; border: 2px solid; border-radius: 10px;
+      padding: 12px 14px; display: flex; flex-direction: column;
+    }
+    .signal-1 { border-color: var(--c-yellow); background: #fffdf0; }
+    .signal-2 { border-color: #e8c547; background: #fffcf0; }
+    .signal-3 { border-color: #d4a017; background: #fef9ee; }
+
+    .signal-priority {
+      font-size: 9px; font-weight: 700; font-family: var(--font-mono);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--c-gray); margin-bottom: 4px;
+    }
+    .signal-name {
+      font-size: 13px; font-weight: 700; margin-bottom: 4px;
+    }
+    .signal-desc {
+      font-size: 10px; color: var(--c-gray); line-height: 1.5;
+    }
+    .signal-desc code {
+      font-family: var(--font-mono); font-size: 9px;
+      background: #f5f0e0; padding: 1px 3px; border-radius: 2px;
+    }
+
+    /* Safety footer */
+    .safety-bar {
+      margin-top: 10px; padding: 8px 16px;
+      background: #fff5f5; border: 1.5px dashed var(--c-red);
+      border-radius: 8px; text-align: center;
+      font-size: 11px; font-weight: 600; color: var(--c-red);
+    }
+  </style>
+</head>
+<body>
+  <div class="diagram-canvas">
+    <div class="header">
+      <h1>Curator 自主审查流程</h1>
+      <p>7-DAY CYCLE · FULL SCAN · THREE-LAYER CLASSIFICATION · SEVEN SAFETY GATES</p>
+    </div>
+
+    <div class="main">
+      <!-- 5-step flow -->
+      <div class="flow-row">
+        <div class="step highlight">
+          <div class="step-num">①</div>
+          <div class="step-title">定时触发</div>
+          <div class="step-desc">Gateway Cron<br>≥ 7天 + 空闲 2h</div>
+        </div>
+        <div class="flow-arrow">
+          <svg viewBox="0 0 16 12"><path d="M0 6 L10 6 M6 2 L12 6 L6 10" stroke="#f5c518" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="step">
+          <div class="step-num">②</div>
+          <div class="step-title">自动状态转换</div>
+          <div class="step-desc">标记 stale<br>纯规则，不调 LLM</div>
+        </div>
+        <div class="flow-arrow">
+          <svg viewBox="0 0 16 12"><path d="M0 6 L10 6 M6 2 L12 6 L6 10" stroke="#f5c518" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="step highlight">
+          <div class="step-num">③</div>
+          <div class="step-title">LLM 审查</div>
+          <div class="step-desc">umbrella-first<br>9999 次迭代上限</div>
+        </div>
+        <div class="flow-arrow">
+          <svg viewBox="0 0 16 12"><path d="M0 6 L10 6 M6 2 L12 6 L6 10" stroke="#f5c518" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="step">
+          <div class="step-num">④</div>
+          <div class="step-title">评分决策</div>
+          <div class="step-desc">合并 vs 清理<br>三层信号判定</div>
+        </div>
+        <div class="flow-arrow">
+          <svg viewBox="0 0 16 12"><path d="M0 6 L10 6 M6 2 L12 6 L6 10" stroke="#f5c518" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="step highlight">
+          <div class="step-num">⑤</div>
+          <div class="step-title">执行 + 报告</div>
+          <div class="step-desc">快照备份<br>REPORT.md 输出</div>
+        </div>
+      </div>
+
+      <!-- Three-layer classification signals -->
+      <div class="signals-section">
+        <div class="signals-title">三层分类信号（优先级递减）</div>
+        <div class="signals">
+          <div class="signal signal-1">
+            <div class="signal-priority">第一层 · 最权威</div>
+            <div class="signal-name"><code>absorbed_into</code> 参数</div>
+            <div class="signal-desc">Agent 调用 <code>skill_manage(delete)</code> 时<br>传入 <code>absorbed_into=umbrella_name</code><br>→ Agent 自己声明意图</div>
+          </div>
+          <div class="signal signal-2">
+            <div class="signal-priority">第二层 · 结构化</div>
+            <div class="signal-name">YAML 结构化摘要</div>
+            <div class="signal-desc">Curator 要求 LLM 在最终响应中<br>以 fenced YAML 块输出<br><code>consolidations</code> / <code>prunings</code></div>
+          </div>
+          <div class="signal signal-3">
+            <div class="signal-priority">第三层 · 启发式</div>
+            <div class="signal-name">工具调用证据</div>
+            <div class="signal-desc">扫描 <code>skill_manage</code> 的 write/patch<br>操作中是否引用了被删除 Skill<br>找到 → consolidated；否则 → pruned</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="safety-bar">
+        ⚠ 防御纵深：bundled / hub / pinned 只读 · 归档可恢复 · 永不自删 · 快照回滚 · cron 链接保护
+      </div>
+    </div>
+  </div>
+</body>
+</html>

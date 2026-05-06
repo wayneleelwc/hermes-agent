@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>05 · 知识转化流水线</title>
+  <style>
+    :root {
+      --c-bg: #fefcf3; --c-canvas: #fff; --c-yellow: #f5c518;
+      --c-yellow-light: #fff8dc; --c-black: #1a1a1a;
+      --c-gray: #8a7e6b; --c-gray-light: #d4ccb8;
+      --c-red: #e05555; --c-green: #4caf50;
+      --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --font-mono: 'SF Mono', Monaco, Consolas, monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--c-bg); font-family: var(--font-ui);
+      color: var(--c-black); display: flex; align-items: center;
+      justify-content: center; min-height: 100vh; padding: 32px;
+    }
+    .diagram-canvas {
+      background: var(--c-canvas); border: 2px solid var(--c-gray-light);
+      border-radius: 4px; width: 960px; height: 540px;
+      padding: 32px; display: flex; flex-direction: column;
+    }
+    .header { margin-bottom: 16px; }
+    .header h1 { font-size: 22px; font-weight: 700; }
+    .header p { font-size: 12px; color: var(--c-gray); margin-top: 2px; letter-spacing: 0.5px; }
+
+    /* Three stages */
+    .pipeline {
+      flex: 1; display: flex; gap: 12px; align-items: stretch;
+    }
+    .stage {
+      flex: 1; border: 2px solid; border-radius: 12px;
+      padding: 20px; display: flex; flex-direction: column;
+      position: relative;
+    }
+    .stage-1 { border-color: var(--c-yellow); background: #fffdf0; }
+    .stage-2 { border-color: #e8c547; background: #fffcf0; }
+    .stage-3 { border-color: #d4a017; background: #fef9ee; }
+
+    .stage-label {
+      font-size: 10px; font-weight: 700; font-family: var(--font-mono);
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--c-gray); margin-bottom: 6px;
+    }
+    .stage-title {
+      font-size: 20px; font-weight: 800; margin-bottom: 2px;
+    }
+    .stage-subtitle {
+      font-size: 13px; font-weight: 600; color: var(--c-gray);
+      margin-bottom: 12px;
+    }
+    .stage-items {
+      flex: 1; display: flex; flex-direction: column; gap: 8px;
+    }
+    .stage-item {
+      font-size: 12px; line-height: 1.5; padding: 6px 10px;
+      background: rgba(255,255,255,0.6); border-radius: 6px;
+      border: 1px solid var(--c-gray-light);
+    }
+    .stage-item code {
+      font-family: var(--font-mono); font-size: 11px;
+      background: #f5f0e0; padding: 1px 4px; border-radius: 3px;
+    }
+
+    /* Arrows between stages */
+    .arrow-between {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      width: 48px; gap: 4px;
+    }
+    .arrow-between svg { width: 32px; height: 20px; }
+    .arrow-label {
+      font-size: 10px; font-weight: 700; color: var(--c-red);
+      text-align: center; white-space: nowrap;
+    }
+
+    /* Review Fork detail box */
+    .fork-box {
+      margin-top: 12px; padding: 14px 20px;
+      background: #fffdf0; border: 2px solid var(--c-yellow);
+      border-radius: 10px;
+    }
+    .fork-title {
+      font-size: 14px; font-weight: 700; margin-bottom: 6px;
+    }
+    .fork-desc {
+      font-size: 11px; color: var(--c-gray); line-height: 1.6;
+    }
+    .fork-desc code {
+      font-family: var(--font-mono); font-size: 10px;
+      background: #f5f0e0; padding: 1px 4px; border-radius: 3px;
+    }
+    .rubric {
+      display: flex; gap: 8px; margin-top: 8px; justify-content: center;
+    }
+    .rubric-tag {
+      font-size: 10px; font-family: var(--font-mono);
+      padding: 3px 10px; border-radius: 10px;
+      border: 1.5px solid var(--c-yellow); background: #fff8dc;
+      color: #8a6c0f;
+    }
+  </style>
+</head>
+<body>
+  <div class="diagram-canvas">
+    <div class="header">
+      <h1>知识转化流水线</h1>
+      <p>MEMORY (DECLARATIVE) → SKILL (PROCEDURAL) → CURATOR (AUTONOMOUS MAINTENANCE)</p>
+    </div>
+
+    <div class="pipeline">
+      <!-- Stage 1: Memory -->
+      <div class="stage stage-1">
+        <div class="stage-label">Stage 1</div>
+        <div class="stage-title">Memory</div>
+        <div class="stage-subtitle">声明性知识</div>
+        <div class="stage-items">
+          <div class="stage-item"><code>MEMORY.md</code> / <code>USER.md</code></div>
+          <div class="stage-item">Provider 提取的事实</div>
+          <div class="stage-item">记录"用户是谁、喜欢什么、做了什么"</div>
+        </div>
+      </div>
+
+      <div class="arrow-between">
+        <svg viewBox="0 0 32 20"><path d="M0 10 L22 10 M16 4 L26 10 L16 16" stroke="#1a1a1a" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="arrow-label">Review<br>Fork</div>
+      </div>
+
+      <!-- Stage 2: Skill -->
+      <div class="stage stage-2">
+        <div class="stage-label">Stage 2</div>
+        <div class="stage-title">Skill</div>
+        <div class="stage-subtitle">过程性知识</div>
+        <div class="stage-items">
+          <div class="stage-item"><code>SKILL.md</code> 文件</div>
+          <div class="stage-item">Review Fork 审视转化</div>
+          <div class="stage-item">记录"怎么做某件事"</div>
+        </div>
+      </div>
+
+      <div class="arrow-between">
+        <svg viewBox="0 0 32 20"><path d="M0 10 L22 10 M16 4 L26 10 L16 16" stroke="#1a1a1a" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="arrow-label">周期<br>触发</div>
+      </div>
+
+      <!-- Stage 3: Curator -->
+      <div class="stage stage-3">
+        <div class="stage-label">Stage 3</div>
+        <div class="stage-title">Curator</div>
+        <div class="stage-subtitle">自主维护</div>
+        <div class="stage-items">
+          <div class="stage-item">7天周期审查</div>
+          <div class="stage-item">评分 → 合并 → 清理</div>
+          <div class="stage-item">知识库自我打理</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fork-box">
+      <div class="fork-title">Review Fork：知识转化的关键触发点</div>
+      <div class="fork-desc">
+        每轮对话后 fork 子 Agent → 受限工具集（memory + skills）→ 继承父运行时 → <code>rubric</code> 评分决策
+      </div>
+      <div class="rubric">
+        <span class="rubric-tag">relevance</span>
+        <span class="rubric-tag">completeness</span>
+        <span class="rubric-tag">correctness</span>
+        <span class="rubric-tag">actionability</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

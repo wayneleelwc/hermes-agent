@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hermes 记忆与知识系统 — 配图目录</title>
+  <style>
+    :root {
+      --c-bg: #fefcf3;
+      --c-canvas: #ffffff;
+      --c-border: #e5dcc8;
+      --c-text-main: #1a1a1a;
+      --c-text-sub: #8a7e6b;
+      --c-accent: #f5c518;
+      --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--c-bg);
+      font-family: var(--font-ui);
+      color: var(--c-text-main);
+      padding: 48px 32px;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 {
+      font-size: 28px; font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 14px; color: var(--c-text-sub);
+      margin-bottom: 40px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--c-canvas);
+      border: 1.5px solid var(--c-border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .card:hover {
+      border-color: var(--c-accent);
+      box-shadow: 0 2px 12px rgba(245,197,24,0.15);
+    }
+    .card-thumb {
+      width: 100%; height: 160px;
+      background: #faf7ee;
+      display: flex; align-items: center; justify-content: center;
+      border-bottom: 1px solid var(--c-border);
+      font-size: 13px; color: var(--c-text-sub);
+    }
+    .card-body { padding: 14px 16px; }
+    .card-num {
+      display: inline-block;
+      font-size: 11px; font-weight: 600;
+      background: var(--c-accent);
+      color: #1a1a1a;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+    }
+    .card-title {
+      font-size: 15px; font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .card-desc {
+      font-size: 12px; color: var(--c-text-sub);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Hermes 记忆与知识系统 — 配图目录</h1>
+    <p class="subtitle">第 03 篇 · 双层架构与自进化闭环 · 共 7 张配图 · 手写画风</p>
+    <div class="grid">
+
+      <a class="card" href="./01-cover.html">
+        <div class="card-thumb">封面预览</div>
+        <div class="card-body">
+          <span class="card-num">01</span>
+          <div class="card-title">封面 — 主题标题</div>
+          <div class="card-desc">Hermes Agent 记忆与知识系统<br>双层架构与自进化闭环</div>
+        </div>
+      </a>
+
+      <a class="card" href="./02-architecture-overview.html">
+        <div class="card-thumb">全景预览</div>
+        <div class="card-body">
+          <span class="card-num">02</span>
+          <div class="card-title">知识系统全景</div>
+          <div class="card-desc">四层协同运转的知识转化体系<br>Curator → Skills → Providers → Built-in</div>
+        </div>
+      </a>
+
+      <a class="card" href="./03-provider-lifecycle.html">
+        <div class="card-thumb">生命周期预览</div>
+        <div class="card-body">
+          <span class="card-num">03</span>
+          <div class="card-title">MemoryProvider 生命周期</div>
+          <div class="card-desc">7 个核心方法编排时序<br>initialize → prefetch → sync_turn → ...</div>
+        </div>
+      </a>
+
+      <a class="card" href="./04-provider-comparison.html">
+        <div class="card-thumb">对比预览</div>
+        <div class="card-body">
+          <span class="card-num">04</span>
+          <div class="card-title">Provider 对比矩阵</div>
+          <div class="card-desc">Honcho 辩证建模 vs Mem0 事实提取<br>两种截然不同的记忆哲学</div>
+        </div>
+      </a>
+
+      <a class="card" href="./05-knowledge-pipeline.html">
+        <div class="card-thumb">流水线预览</div>
+        <div class="card-body">
+          <span class="card-num">05</span>
+          <div class="card-title">知识转化流水线</div>
+          <div class="card-desc">Memory → Skill → Curator<br>Review Fork 触发 · rubric 评分决策</div>
+        </div>
+      </a>
+
+      <a class="card" href="./06-skill-lifecycle.html">
+        <div class="card-thumb">状态机预览</div>
+        <div class="card-body">
+          <span class="card-num">06</span>
+          <div class="card-title">Skill 生命周期状态机</div>
+          <div class="card-desc">六状态完整闭环<br>created → used → graded → improved → ...</div>
+        </div>
+      </a>
+
+      <a class="card" href="./07-curator-process.html">
+        <div class="card-thumb">审查流程预览</div>
+        <div class="card-body">
+          <span class="card-num">07</span>
+          <div class="card-title">Curator 自主审查流程</div>
+          <div class="card-desc">7天周期 · 全库扫描<br>三层分类信号 · 七道安全防线</div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+</body>
+</html>

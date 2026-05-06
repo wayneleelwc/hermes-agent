@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>01 · 封面 — Hermes 记忆与知识系统</title>
+  <style>
+    :root {
+      --c-bg: #fefcf3;
+      --c-canvas: #ffffff;
+      --c-yellow: #f5c518;
+      --c-yellow-light: #fff8dc;
+      --c-yellow-mid: #fce588;
+      --c-black: #1a1a1a;
+      --c-gray: #8a7e6b;
+      --c-gray-light: #d4ccb8;
+      --c-red: #e05555;
+      --c-green: #4caf50;
+      --c-blue: #5b9bd5;
+      --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --font-mono: 'SF Mono', Monaco, Consolas, monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--c-bg);
+      font-family: var(--font-ui);
+      color: var(--c-black);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 32px;
+    }
+    .diagram-canvas {
+      background: var(--c-canvas);
+      border: 2px solid var(--c-gray-light);
+      border-radius: 4px;
+      padding: 0;
+      width: 960px;
+      height: 540px;
+      position: relative;
+      overflow: hidden;
+    }
+    /* Hand-drawn wobble border effect */
+    .diagram-canvas::before {
+      content: '';
+      position: absolute;
+      top: -2px; left: -2px; right: -2px; bottom: -2px;
+      border: 2.5px solid var(--c-gray-light);
+      border-radius: 6px;
+      pointer-events: none;
+    }
+
+    /* Top yellow accent strip */
+    .accent-strip {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 8px;
+      background: var(--c-yellow);
+    }
+
+    /* Main content */
+    .content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 40px;
+    }
+
+    .series-tag {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--c-gray);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .main-title {
+      font-size: 52px;
+      font-weight: 800;
+      color: var(--c-black);
+      text-align: center;
+      line-height: 1.15;
+      margin-bottom: 8px;
+    }
+
+    .sub-title {
+      font-size: 40px;
+      font-weight: 700;
+      color: var(--c-black);
+      text-align: center;
+      line-height: 1.2;
+      margin-bottom: 24px;
+    }
+
+    /* Yellow underline */
+    .yellow-line {
+      width: 280px;
+      height: 6px;
+      background: var(--c-yellow);
+      border-radius: 3px;
+      margin-bottom: 24px;
+    }
+
+    .tagline {
+      font-size: 18px;
+      color: var(--c-gray);
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    /* Keywords chips */
+    .keywords {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .keyword {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--c-black);
+      background: var(--c-yellow-light);
+      border: 1.5px solid var(--c-yellow);
+      padding: 6px 16px;
+      border-radius: 20px;
+    }
+
+    /* Decorative dots */
+    .dot {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: var(--c-yellow);
+      border-radius: 50%;
+    }
+    .dot-1 { top: 40px; left: 40px; }
+    .dot-2 { top: 40px; right: 40px; }
+    .dot-3 { bottom: 40px; left: 40px; }
+    .dot-4 { bottom: 40px; right: 40px; }
+    .dot-5 { top: 50%; left: 28px; transform: translateY(-50%); width: 8px; height: 8px; }
+    .dot-6 { top: 50%; right: 28px; transform: translateY(-50%); width: 8px; height: 8px; }
+
+    /* Series info */
+    .series-info {
+      position: absolute;
+      bottom: 20px;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 12px;
+      color: var(--c-gray);
+    }
+
+    /* Small hand-drawn star */
+    .star {
+      position: absolute;
+      font-size: 20px;
+      color: var(--c-yellow);
+    }
+    .star-1 { top: 60px; left: 70px; transform: rotate(-15deg); }
+    .star-2 { top: 55px; right: 75px; transform: rotate(20deg); }
+  </style>
+</head>
+<body>
+  <div class="diagram-canvas">
+    <div class="accent-strip"></div>
+
+    <div class="dot dot-1"></div>
+    <div class="dot dot-2"></div>
+    <div class="dot dot-3"></div>
+    <div class="dot dot-4"></div>
+    <div class="dot dot-5"></div>
+    <div class="dot dot-6"></div>
+
+    <div class="star star-1">✦</div>
+    <div class="star star-2">✦</div>
+
+    <div class="content">
+      <div class="series-tag">Hermes Agent 深度拆解 · 第 03 篇</div>
+      <div class="main-title">Hermes Agent</div>
+      <div class="sub-title">记忆与知识系统</div>
+      <div class="yellow-line"></div>
+      <div class="tagline">双层架构与自进化闭环</div>
+      <div class="keywords">
+        <span class="keyword">双层记忆</span>
+        <span class="keyword">MemoryProvider</span>
+        <span class="keyword">Review Fork</span>
+        <span class="keyword">Skill 生命周期</span>
+        <span class="keyword">Curator 自主维护</span>
+      </div>
+    </div>
+
+    <div class="series-info">聚焦问题：Hermes 如何记住用户？对话如何转化为知识？知识库如何自我维护？</div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>02 · 知识系统全景 — 四层架构</title>
+  <style>
+    :root {
+      --c-bg: #fefcf3; --c-canvas: #fff; --c-yellow: #f5c518;
+      --c-yellow-light: #fff8dc; --c-yellow-mid: #fce588;
+      --c-black: #1a1a1a; --c-gray: #8a7e6b; --c-gray-light: #d4ccb8;
+      --c-red: #e05555; --c-green: #4caf50;
+      --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --font-mono: 'SF Mono', Monaco, Consolas, monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--c-bg); font-family: var(--font-ui);
+      color: var(--c-black); display: flex; align-items: center;
+      justify-content: center; min-height: 100vh; padding: 32px;
+    }
+    .diagram-canvas {
+      background: var(--c-canvas); border: 2px solid var(--c-gray-light);
+      border-radius: 4px; width: 960px; height: 540px;
+      position: relative; overflow: hidden; padding: 32px;
+      display: flex; flex-direction: column;
+    }
+
+    /* Header */
+    .header { margin-bottom: 20px; }
+    .header h1 { font-size: 22px; font-weight: 700; }
+    .header p { font-size: 12px; color: var(--c-gray); margin-top: 2px; letter-spacing: 0.5px; }
+
+    /* Layer stack */
+    .layers { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+
+    .layer {
+      border: 2px solid; border-radius: 8px;
+      padding: 14px 20px; display: flex; align-items: center;
+      gap: 16px; position: relative;
+    }
+    .layer-num {
+      font-size: 11px; font-weight: 700; font-family: var(--font-mono);
+      background: var(--c-black); color: #fff; padding: 2px 8px;
+      border-radius: 4px; white-space: nowrap;
+    }
+    .layer-content { flex: 1; }
+    .layer-title { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+    .layer-desc { font-size: 11px; color: var(--c-gray); }
+    .layer-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+    .badge {
+      font-size: 10px; font-family: var(--font-mono);
+      padding: 2px 8px; border-radius: 10px;
+      border: 1.5px solid; white-space: nowrap;
+    }
+
+    /* Layer colors */
+    .layer-4 { border-color: var(--c-yellow); background: #fffdf0; }
+    .layer-4 .badge { border-color: var(--c-yellow); color: #b8960b; background: #fff8dc; }
+    .layer-3 { border-color: #e8c547; background: #fffcf0; }
+    .layer-3 .badge { border-color: #e8c547; color: #9a8219; background: #fff8dc; }
+    .layer-2 { border-color: #d4a017; background: #fefaf0; }
+    .layer-2 .badge { border-color: #d4a017; color: #8a6c0f; background: #faf0d0; }
+    .layer-1 { border-color: #b8860b; background: #fef5e0; }
+    .layer-1 .badge { border-color: #b8860b; color: #7a5a08; background: #f5e8c0; }
+
+    /* Down arrows between layers */
+    .arrow-down {
+      display: flex; justify-content: center; align-items: center;
+      height: 18px;
+    }
+    .arrow-down svg { width: 20px; height: 18px; }
+
+    /* Side annotations */
+    .side-left {
+      position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+      writing-mode: vertical-rl; font-size: 11px; color: var(--c-gray);
+      letter-spacing: 3px;
+    }
+    .side-right {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      writing-mode: vertical-rl; font-size: 11px; color: var(--c-gray);
+      letter-spacing: 3px;
+    }
+    .side-right-arrow {
+      position: absolute; right: 28px; top: 120px; bottom: 80px;
+      width: 2px; background: var(--c-gray-light);
+    }
+    .side-right-arrow::after {
+      content: ''; position: absolute; bottom: -6px; left: -4px;
+      border-left: 5px solid transparent; border-right: 5px solid transparent;
+      border-top: 8px solid var(--c-gray-light);
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 12px; text-align: center;
+      font-size: 11px; color: var(--c-gray); font-style: italic;
+      border-top: 1px dashed var(--c-gray-light); padding-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="diagram-canvas">
+    <div class="side-left">自进化 ↑</div>
+    <div class="side-right-arrow"></div>
+    <div class="side-right">主动维护 → 被动记录 ↓</div>
+
+    <div class="header">
+      <h1>Hermes 记忆与知识系统全景</h1>
+      <p>FOUR-LAYER KNOWLEDGE TRANSFORMATION SYSTEM</p>
+    </div>
+
+    <div class="layers">
+      <!-- Layer 4: Curator -->
+      <div class="layer layer-4">
+        <span class="layer-num">L4</span>
+        <div class="layer-content">
+          <div class="layer-title">Curator — 自主知识管家</div>
+          <div class="layer-desc">7天周期 · 全库扫描 · 评分 → 合并 → 清理 → 报告</div>
+        </div>
+        <div class="layer-badges">
+          <span class="badge">umbrella-first</span>
+          <span class="badge">3层分类信号</span>
+          <span class="badge">7道防线</span>
+        </div>
+      </div>
+
+      <div class="arrow-down">
+        <svg viewBox="0 0 20 18"><path d="M10 0 L10 12 M4 8 L10 16 L16 8" stroke="#f5c518" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <!-- Layer 3: Skills -->
+      <div class="layer layer-3">
+        <span class="layer-num">L3</span>
+        <div class="layer-content">
+          <div class="layer-title">Skills — 过程性知识（可执行单元）</div>
+          <div class="layer-desc">Review Fork 审视 → 六状态生命周期 → agentskills.io 开放标准</div>
+        </div>
+        <div class="layer-badges">
+          <span class="badge">Review Fork</span>
+          <span class="badge">rubric 评分</span>
+          <span class="badge">YAML frontmatter</span>
+        </div>
+      </div>
+
+      <div class="arrow-down">
+        <svg viewBox="0 0 20 18"><path d="M10 0 L10 12 M4 8 L10 16 L16 8" stroke="#e8c547" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <!-- Layer 2: External Providers -->
+      <div class="layer layer-2">
+        <span class="layer-num">L2</span>
+        <div class="layer-content">
+          <div class="layer-title">External Providers — 可插拔智能记忆后端</div>
+          <div class="layer-desc">一次只能激活一个 · 防止 Schema 膨胀 · Provider 故障不阻塞 Agent</div>
+        </div>
+        <div class="layer-badges">
+          <span class="badge">Honcho</span>
+          <span class="badge">Mem0</span>
+          <span class="badge">Hindsight</span>
+          <span class="badge">Supermemory</span>
+        </div>
+      </div>
+
+      <div class="arrow-down">
+        <svg viewBox="0 0 20 18"><path d="M10 0 L10 12 M4 8 L10 16 L16 8" stroke="#d4a017" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <!-- Layer 1: Built-in Memory -->
+      <div class="layer layer-1">
+        <span class="layer-num">L1</span>
+        <div class="layer-content">
+          <div class="layer-title">Built-in Memory — 声明性知识基座（始终在线）</div>
+          <div class="layer-desc">MEMORY.md · USER.md · AGENTS.md → MemoryStore 文件基座 → System Prompt 注入</div>
+        </div>
+        <div class="layer-badges">
+          <span class="badge">MEMORY.md</span>
+          <span class="badge">USER.md</span>
+          <span class="badge">2200/1375 字符</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">MemoryManager 编排器统一调度 · 广播 + 容错隔离模式 · Context Fencing 围栏防混淆</div>
+  </div>
+</body>
+</html>

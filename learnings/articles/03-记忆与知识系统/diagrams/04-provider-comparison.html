@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>04 · Provider 对比矩阵 — Honcho vs Mem0</title>
+  <style>
+    :root {
+      --c-bg: #fefcf3; --c-canvas: #fff; --c-yellow: #f5c518;
+      --c-yellow-light: #fff8dc; --c-black: #1a1a1a;
+      --c-gray: #8a7e6b; --c-gray-light: #d4ccb8;
+      --c-blue: #5b9bd5; --c-blue-light: #eef5fb;
+      --c-red: #e05555;
+      --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --font-mono: 'SF Mono', Monaco, Consolas, monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--c-bg); font-family: var(--font-ui);
+      color: var(--c-black); display: flex; align-items: center;
+      justify-content: center; min-height: 100vh; padding: 32px;
+    }
+    .diagram-canvas {
+      background: var(--c-canvas); border: 2px solid var(--c-gray-light);
+      border-radius: 4px; width: 960px; height: 540px;
+      padding: 32px; display: flex; flex-direction: column;
+    }
+    .header { margin-bottom: 20px; }
+    .header h1 { font-size: 22px; font-weight: 700; }
+    .header p { font-size: 12px; color: var(--c-gray); margin-top: 2px; letter-spacing: 0.5px; }
+
+    /* Comparison table */
+    .compare-table {
+      flex: 1; display: grid;
+      grid-template-columns: 120px 1fr 1fr;
+      grid-template-rows: auto repeat(6, 1fr);
+      gap: 0; border: 1.5px solid var(--c-gray-light);
+      border-radius: 8px; overflow: hidden;
+    }
+    .cell {
+      padding: 10px 14px; border-bottom: 1px solid var(--c-gray-light);
+      border-right: 1px solid var(--c-gray-light);
+      display: flex; align-items: center;
+      font-size: 12px; line-height: 1.4;
+    }
+    .cell:last-child { border-right: none; }
+    .cell-label {
+      font-weight: 700; background: #faf8f0;
+      justify-content: center; text-align: center;
+    }
+    .cell-honcho { background: #fffdf0; }
+    .cell-mem0 { background: var(--c-blue-light); }
+
+    /* Column headers */
+    .col-header {
+      padding: 14px; font-size: 15px; font-weight: 700;
+      text-align: center; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .col-header-honcho {
+      background: var(--c-yellow); color: var(--c-black);
+      border-bottom: 2px solid #e0b400;
+    }
+    .col-header-mem0 {
+      background: var(--c-blue); color: #fff;
+      border-bottom: 2px solid #4a8ac4;
+    }
+    .col-header .sub { font-size: 11px; font-weight: 400; opacity: 0.8; margin-top: 2px; }
+    .corner-cell {
+      background: #f5f0e6; font-size: 11px; font-weight: 600;
+      color: var(--c-gray); display: flex; align-items: center;
+      justify-content: center;
+    }
+
+    /* Bottom recommendation */
+    .recommendation {
+      margin-top: 16px; padding: 12px 20px;
+      background: #faf8f0; border: 1.5px solid var(--c-gray-light);
+      border-radius: 8px; display: flex; justify-content: center; gap: 40px;
+    }
+    .rec-item {
+      font-size: 13px; color: var(--c-black);
+    }
+    .rec-item strong { color: var(--c-yellow); }
+    .rec-item.blue strong { color: var(--c-blue); }
+  </style>
+</head>
+<body>
+  <div class="diagram-canvas">
+    <div class="header">
+      <h1>Provider 对比：Honcho vs Mem0</h1>
+      <p>TWO DIALECTIC MEMORY PHILOSOPHIES</p>
+    </div>
+
+    <div class="compare-table">
+      <div class="cell corner-cell">对比维度</div>
+      <div class="col-header col-header-honcho">
+        Honcho
+        <span class="sub">辩证用户建模</span>
+      </div>
+      <div class="col-header col-header-mem0">
+        Mem0
+        <span class="sub">服务端事实提取</span>
+      </div>
+
+      <div class="cell cell-label">核心理念</div>
+      <div class="cell cell-honcho">辩证用户建模（dialectic）<br>构建随时间演化的用户表示</div>
+      <div class="cell cell-mem0">服务端事实提取<br>LLM 自动提取结构化事实</div>
+
+      <div class="cell cell-label">记忆形式</div>
+      <div class="cell cell-honcho">会话级用户表示 + peer card<br>理解"用户是谁"</div>
+      <div class="cell cell-mem0">结构化事实条目<br>记录"用户做了什么"</div>
+
+      <div class="cell cell-label">写入策略</div>
+      <div class="cell cell-honcho">每轮 user/assistant 对<br>sync_turn 自动触发服务端更新</div>
+      <div class="cell cell-mem0">add() 写入 + infer=True<br>服务端 LLM 自动提取去重</div>
+
+      <div class="cell cell-label">召回方式</div>
+      <div class="cell cell-honcho">context() 返回当前用户表示<br>prefetch 自动召回</div>
+      <div class="cell cell-mem0">search() 语义搜索 + 重排序<br>精确信息检索</div>
+
+      <div class="cell cell-label">工具数量</div>
+      <div class="cell cell-honcho">5 个<br>profile / search / context / reasoning / conclude</div>
+      <div class="cell cell-mem0">3 个<br>search / conclude / keywords</div>
+
+      <div class="cell cell-label">特色能力</div>
+      <div class="cell cell-honcho">用户画像推理问答<br>recall_mode 可配置</div>
+      <div class="cell cell-mem0">自动去重 + 关键词提取<br>Circuit Breaker 熔断保护</div>
+    </div>
+
+    <div class="recommendation">
+      <div class="rec-item"><strong>Honcho</strong> — 理解用户长期画像</div>
+      <div class="rec-item blue"><strong>Mem0</strong> — 精确事实检索</div>
+    </div>
+  </div>
+</body>
+</html>
