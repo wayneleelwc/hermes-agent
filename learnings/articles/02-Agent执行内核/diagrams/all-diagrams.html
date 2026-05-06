@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes Agent 执行内核 — 同步循环、中断与容错</title>
+<style>
+/* ===== 编辑排版风 ===== */
+:root {
+  --c-bg: #faf8f5; --c-canvas: #fff; --c-ink: #2d2d2d;
+  --c-terra: #c75b39; --c-terra-light: #fdf0ea;
+  --c-sage: #4a7c59; --c-sage-light: #eef5ef;
+  --c-slate: #5b6b7a; --c-slate-light: #f0f3f5;
+  --c-burg: #8b3a3a; --c-burg-light: #fdf2f2;
+  --c-amber: #b8751e; --c-amber-light: #fef8f0;
+  --c-moss: #5c7a4a; --c-moss-light: #f4f7f0;
+  --c-border: #e5e0d8; --c-border-light: #f0ece6;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-serif: Georgia, 'Times New Roman', 'Songti SC', 'SimSun', serif;
+  --font-mono: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-sans);background:var(--c-bg);color:var(--c-ink);display:flex;justify-content:center;padding:40px 20px;min-height:100vh}
+.C{background:var(--c-canvas);border:1px solid var(--c-border);box-shadow:0 1px 3px rgba(0,0,0,.04);padding:40px 44px;width:1280px;min-width:1280px}
+.header{margin-bottom:32px;text-align:center}
+.main-title{font-family:var(--font-serif);font-size:28px;font-weight:700;color:var(--c-ink);margin-bottom:4px;letter-spacing:-0.3px}
+.main-title em{font-style:normal;color:var(--c-terra)}
+.subtitle{font-size:14px;color:var(--c-slate);font-weight:400}
+
+.tabs{display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid var(--c-border);flex-wrap:wrap}
+.tab{padding:10px 18px;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:13px;font-weight:500;color:var(--c-slate);font-family:var(--font-sans);transition:all 0.2s;letter-spacing:0.2px}
+.tab:hover{color:var(--c-ink)}
+.tab.active{color:var(--c-terra);border-bottom-color:var(--c-terra);font-weight:600}
+.tc{display:none}
+.tc.active{display:block;border:1px solid var(--c-border);padding:28px 24px 24px;background:var(--c-canvas);box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.dt{font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--c-ink);margin-bottom:4px;text-align:center}
+.ds{font-size:14px;color:var(--c-slate);text-align:center;margin-bottom:24px;line-height:1.6}
+
+.chip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:2px;display:inline-block;white-space:nowrap;letter-spacing:0.3px}
+.chip-t{background:var(--c-terra-light);color:var(--c-terra)}
+.chip-s{background:var(--c-sage-light);color:var(--c-sage)}
+.chip-b{background:var(--c-burg-light);color:var(--c-burg)}
+.chip-a{background:var(--c-amber-light);color:var(--c-amber)}
+.chip-m{background:var(--c-moss-light);color:var(--c-moss)}
+.chip-sl{background:var(--c-slate-light);color:var(--c-slate)}
+
+.card{border:1px solid var(--c-border);border-left:4px solid var(--c-border);margin-bottom:6px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.card-hdr{padding:9px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;background:var(--c-border-light);border-bottom:1px solid var(--c-border)}
+.card-body{padding:12px 14px;font-size:13px;line-height:1.6;background:var(--c-canvas)}
+.card-t{border-left-color:var(--c-terra)}.card-t .card-hdr{background:var(--c-terra-light);color:var(--c-terra)}
+.card-s{border-left-color:var(--c-sage)}.card-s .card-hdr{background:var(--c-sage-light);color:var(--c-sage)}
+.card-b{border-left-color:var(--c-burg)}.card-b .card-hdr{background:var(--c-burg-light);color:var(--c-burg)}
+.card-a{border-left-color:var(--c-amber)}.card-a .card-hdr{background:var(--c-amber-light);color:var(--c-amber)}
+.card-m{border-left-color:var(--c-moss)}.card-m .card-hdr{background:var(--c-moss-light);color:var(--c-moss)}
+
+.L{display:flex;border:1px solid var(--c-border);margin-bottom:2px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.L-tag{width:110px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 8px;border-right:1px solid var(--c-border)}
+.L-num{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:15px;font-weight:700;margin-bottom:4px}
+.L-label{font-size:12px;font-weight:700;text-align:center;line-height:1.2;font-family:var(--font-sans)}
+.L-body{flex:1;padding:12px 16px;display:flex;flex-direction:column;gap:4px}
+.L-title{font-size:14px;font-weight:700;color:var(--c-ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.L-row{display:flex;align-items:center;gap:6px;font-size:13px;line-height:1.5}
+.L-dot{width:6px;height:6px;flex-shrink:0}
+.L-name{font-weight:700;font-family:var(--font-mono);font-size:12px;min-width:160px;flex-shrink:0;color:var(--c-slate)}
+.L-right{width:220px;flex-shrink:0;padding:10px 14px;border-left:1px solid var(--c-border);display:flex;flex-direction:column;justify-content:center;gap:3px;background:var(--c-border-light)}
+.L-right-title{font-size:11px;font-weight:700;color:var(--c-ink);margin-bottom:1px}
+.L-right-item{font-size:12px;color:var(--c-slate);line-height:1.4}
+
+.L.l1 .L-tag{background:var(--c-terra-light)}.L.l1 .L-label{color:var(--c-terra)}.L.l1 .L-num{background:var(--c-terra);color:#fff}
+.L.l2 .L-tag{background:#fef5f0}.L.l2 .L-label{color:#b8542e}
+.L.l3 .L-tag{background:var(--c-sage-light)}.L.l3 .L-label{color:var(--c-sage)}.L.l3 .L-num{background:var(--c-sage);color:#fff}
+.L.l4 .L-tag{background:var(--c-slate-light)}.L.l4 .L-label{color:var(--c-slate)}.L.l4 .L-num{background:var(--c-slate);color:#fff}
+.L.l5 .L-tag{background:var(--c-amber-light)}.L.l5 .L-label{color:var(--c-amber)}.L.l5 .L-num{background:var(--c-amber);color:#fff}
+.L.l6 .L-tag{background:var(--c-burg-light)}.L.l6 .L-label{color:var(--c-burg)}.L.l6 .L-num{background:var(--c-burg);color:#fff}
+
+.stage-bar{display:flex;align-items:stretch;gap:2px;margin-bottom:16px}
+.stage-cell{flex:1;padding:12px 10px;color:#fff;display:flex;align-items:center;gap:8px;min-width:0}
+.stage-cell .stage-num{width:28px;height:28px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:14px;font-weight:700;flex-shrink:0}
+.stage-cell .stage-text{flex:1;min-width:0}
+.stage-cell .stage-title{font-size:13px;font-weight:700;line-height:1.2}
+.stage-cell .stage-sub{font-size:10px;opacity:.8;margin-top:1px;line-height:1.3}
+.stage-cell.st1{background:var(--c-terra)}.stage-cell.st2{background:#d4734a}
+.stage-cell.st3{background:var(--c-sage)}.stage-cell.st4{background:var(--c-slate)}
+.stage-cell.st5{background:var(--c-moss)}.stage-cell.st6{background:var(--c-burg)}
+
+.flow-row{display:flex;align-items:center;gap:0;margin:16px 0;flex-wrap:wrap}
+.flow-node{flex:1;min-width:110px;text-align:center;padding:14px 10px;border:1px solid var(--c-border);background:var(--c-canvas);box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.flow-node .fn-title{font-size:14px;font-weight:700;color:var(--c-ink);margin-bottom:2px}
+.flow-node .fn-sub{font-size:11px;color:var(--c-slate);line-height:1.4}
+.flow-arrow{padding:0 4px;color:var(--c-terra);font-size:18px;font-weight:700;flex-shrink:0}
+
+.cmp-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px}
+.cmp-table th{background:var(--c-terra-light);color:var(--c-terra);padding:10px 12px;text-align:left;font-weight:700;border:1px solid var(--c-border);font-size:12px}
+.cmp-table td{padding:9px 12px;border:1px solid var(--c-border);line-height:1.5}
+.cmp-table tr:nth-child(even) td{background:var(--c-border-light)}
+
+.decision-tree{border:1px solid var(--c-border);padding:20px;background:var(--c-canvas);box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.decision-tree .dt-row{display:flex;align-items:center;margin-bottom:6px}
+.decision-tree .dt-node{padding:10px 14px;border:1px solid var(--c-border);border-radius:2px;font-size:13px;font-weight:700;min-width:140px;text-align:center}
+.decision-tree .dt-label{font-size:11px;font-weight:600;padding:2px 8px;margin:0 8px;color:var(--c-slate)}
+.decision-tree .dt-cond{font-size:12px;color:var(--c-amber);font-weight:600;margin:0 8px}
+.decision-tree .dt-yes{font-size:12px;color:var(--c-sage);font-weight:700;margin-right:8px}
+.decision-tree .dt-no{font-size:12px;color:var(--c-burg);font-weight:700;margin-right:8px}
+
+.insight{border-left:4px solid var(--c-sage);background:var(--c-sage-light);padding:14px 18px;margin:16px 0;font-size:13px;line-height:1.7}
+.insight strong{color:var(--c-sage)}
+.footer{margin-top:16px;text-align:center;font-size:11px;color:var(--c-slate);line-height:1.6}
+</style>
+</head>
+<body>
+<div class="C">
+
+<div class="header">
+  <div class="main-title">Agent 执行内核 — <em>同步循环、中断与容错</em></div>
+  <div class="subtitle">Hermes Agent · 第 02 篇 · 核心循环机制深度拆解</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="tab0">封面</button>
+  <button class="tab" data-tab="tab1">主循环状态机</button>
+  <button class="tab" data-tab="tab2">双层预算体系</button>
+  <button class="tab" data-tab="tab3">中断决策树</button>
+  <button class="tab" data-tab="tab4">容错与重试</button>
+  <button class="tab" data-tab="tab5">三向循环对比</button>
+</div>
+
+<!-- ===== Tab 0: 封面 ===== -->
+<div class="tc active" data-tab="tab0">
+  <div class="dt">Agent 执行内核</div>
+  <div class="ds">第 02 篇 · 同步循环、中断与容错</div>
+  <div class="stage-bar">
+    <div class="stage-cell st1"><div class="stage-num">1</div><div class="stage-text"><div class="stage-title">中断检查</div><div class="stage-sub">_interrupt_requested</div></div></div>
+    <div class="stage-cell st2"><div class="stage-num">2</div><div class="stage-text"><div class="stage-title">预算消费</div><div class="stage-sub">budget.consume()</div></div></div>
+    <div class="stage-cell st3"><div class="stage-num">3</div><div class="stage-text"><div class="stage-title">消息组装</div><div class="stage-sub">API messages + cache</div></div></div>
+    <div class="stage-cell st4"><div class="stage-num">4</div><div class="stage-text"><div class="stage-title">API 调用</div><div class="stage-sub">streaming + retry</div></div></div>
+    <div class="stage-cell st5"><div class="stage-num">5</div><div class="stage-text"><div class="stage-title">工具执行</div><div class="stage-sub">handle_function_call</div></div></div>
+    <div class="stage-cell st6"><div class="stage-num">6</div><div class="stage-text"><div class="stage-title">后处理</div><div class="stage-sub">review + persist</div></div></div>
+  </div>
+  <div style="text-align:center;margin-top:16px">
+    <span class="chip chip-t">同步循环</span>
+    <span class="chip chip-s">双层预算</span>
+    <span class="chip chip-a">线程中断</span>
+    <span class="chip chip-sl">按类型重试</span>
+    <span class="chip chip-b">体面告别</span>
+  </div>
+  <div class="insight">
+    <strong>核心命题：</strong>Hermes 用一条朴素的 <code>while</code> 循环驱动整个 Agent 行为。同步模型不等于功能受限——流式输出走 callback、中断走线程信号、子 Agent 走新实例、预算走共享对象。关键在于在循环的固定边界点上插入非同步操作，而不是把整个循环变成异步的。
+  </div>
+</div>
+
+<!-- ===== Tab 1: 主循环状态机 ===== -->
+<div class="tc" data-tab="tab1">
+  <div class="dt">主循环状态机</div>
+  <div class="ds">run_conversation() 的 6 阶段完整流转</div>
+
+  <div class="stage-bar">
+    <div class="stage-cell st1"><div class="stage-num">1</div><div class="stage-text"><div class="stage-title">中断检查</div><div class="stage-sub">每轮开始时检查<br>_interrupt_requested</div></div></div>
+    <div class="stage-cell st2"><div class="stage-num">2</div><div class="stage-text"><div class="stage-title">预算消费</div><div class="stage-sub">budget.consume()<br>双层预算检查</div></div></div>
+    <div class="stage-cell st3"><div class="stage-num">3</div><div class="stage-text"><div class="stage-title">消息组装</div><div class="stage-sub">messages→api_messages<br>cache breakpoints</div></div></div>
+    <div class="stage-cell st4"><div class="stage-num">4</div><div class="stage-text"><div class="stage-title">API 调用</div><div class="stage-sub">streaming + retry<br>错误分类处理</div></div></div>
+    <div class="stage-cell st5"><div class="stage-num">5</div><div class="stage-text"><div class="stage-title">工具执行</div><div class="stage-sub">handle_function_call<br>安全检查 → 执行</div></div></div>
+    <div class="stage-cell st6"><div class="stage-num">6</div><div class="stage-text"><div class="stage-title">后处理</div><div class="stage-sub">Review Fork +<br>会话持久化</div></div></div>
+  </div>
+
+  <div class="card card-t">
+    <div class="card-hdr"><span class="chip chip-t">循环条件</span> while 三重判定</div>
+    <div class="card-body">
+      <code>while (api_call_count &lt; max_iterations AND budget.remaining &gt; 0) OR _budget_grace_call</code><br>
+      ① 硬上限（本地 90 / 子 Agent 50）② 共享预算池 ③ 体面告别机会
+    </div>
+  </div>
+  <div class="card card-s">
+    <div class="card-hdr"><span class="chip chip-s">消息流</span> 二层模型</div>
+    <div class="card-body">
+      <strong>messages</strong>（持久化）→ <strong>api_messages</strong>（API 调用副本）：注入 memory context、复制 reasoning、清理内部字段、JSON 规范化、trim whitespace。原始消息不修改。
+    </div>
+  </div>
+  <div class="card card-a">
+    <div class="card-hdr"><span class="chip chip-a">退出码</span> _turn_exit_reason</div>
+    <div class="card-body">
+      循环结束时记录 <code>_turn_exit_reason</code>：interrupted_by_user / budget_exhausted / max_iterations_reached / completed / unknown
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab 2: 双层预算体系 ===== -->
+<div class="tc" data-tab="tab2">
+  <div class="dt">双层预算体系</div>
+  <div class="ds">max_iterations（硬上限）+ IterationBudget（共享池）</div>
+
+  <div class="card card-t">
+    <div class="card-hdr"><span class="chip chip-t">第一层</span> 本地上限 max_iterations</div>
+    <div class="card-body">
+      <strong>默认值：</strong>父 Agent 90 / 子 Agent 50<br>
+      <strong>作用：</strong>防止单个 Agent 无限循环<br>
+      <strong>检查时机：</strong>每轮循环开始时，<code>api_call_count &lt; max_iterations</code>
+    </div>
+  </div>
+  <div class="card card-s">
+    <div class="card-hdr"><span class="chip chip-s">第二层</span> 共享预算 IterationBudget</div>
+    <div class="card-body">
+      <strong>实例共享：</strong>父 Agent 创建 IterationBudget 实例 → 子 Agent 在 delegation 时继承同一个实例<br>
+      <strong>消费逻辑：</strong><code>budget.consume()</code> → 原子递减 remaining → 返回 False 时触发体面告别<br>
+      <strong>关键价值：</strong>子 Agent 不会绕过总预算限制
+    </div>
+  </div>
+  <div class="card card-b">
+    <div class="card-hdr"><span class="chip chip-b">预算耗尽</span> 体面告别流程</div>
+    <div class="card-body">
+      ① 注入预算耗尽警告消息（user role）→ ② 设置 <code>_budget_grace_call = True</code> → ③ 允许最后一次 API 调用 → ④ 如果返回 tool_call → 循环自然退出 → ⑤ 强制生成摘要
+    </div>
+  </div>
+  <div class="insight">
+    <strong>设计洞察：</strong>Hermes 只在预算真正耗尽时才通知模型，中间不做压力提示。原因是"intermediate pressure warnings caused models to give up prematurely on complex tasks (#7915)"。
+  </div>
+</div>
+
+<!-- ===== Tab 3: 中断决策树 ===== -->
+<div class="tc" data-tab="tab3">
+  <div class="dt">中断决策树</div>
+  <div class="ds">线程级信号 → 标志位检查 → 作用域隔离</div>
+
+  <div class="decision-tree">
+    <div class="dt-row" style="justify-content:center">
+      <div class="dt-node" style="background:var(--c-terra-light);border-color:var(--c-terra)">外部中断请求</div>
+    </div>
+    <div class="dt-row" style="justify-content:center;margin:8px 0">
+      <div class="dt-cond">interrupt(message)</div>
+    </div>
+    <div class="dt-row" style="justify-content:space-around">
+      <div style="text-align:center">
+        <div class="dt-node" style="background:var(--c-sage-light);border-color:var(--c-sage);font-size:12px">设置标志位<br>_interrupt_requested=True</div>
+      </div>
+      <div style="text-align:center">
+        <div class="dt-node" style="background:var(--c-amber-light);border-color:var(--c-amber);font-size:12px">线程级信号<br>_set_interrupt(tid)</div>
+      </div>
+      <div style="text-align:center">
+        <div class="dt-node" style="background:var(--c-burg-light);border-color:var(--c-burg);font-size:12px">广播子 Agent<br>_active_children</div>
+      </div>
+    </div>
+    <div class="dt-row" style="justify-content:center;margin:12px 0">
+      <div class="dt-cond">Agent 当前在哪？</div>
+    </div>
+    <div class="dt-row" style="justify-content:space-around">
+      <div style="text-align:center">
+        <div class="dt-node" style="font-size:12px">API 调用中</div>
+        <div style="font-size:12px;color:var(--c-slate);margin-top:4px">等待 API 返回<br>（不打断思考中的模型）</div>
+      </div>
+      <div style="text-align:center">
+        <div class="dt-node" style="font-size:12px">工具执行中</div>
+        <div style="font-size:12px;color:var(--c-sage);margin-top:4px">线程信号→提前终止<br>（如 shell 命令）</div>
+      </div>
+    </div>
+    <div class="dt-row" style="justify-content:center;margin:12px 0">
+      <div class="dt-cond">循环下一轮开始时</div>
+    </div>
+    <div class="dt-row" style="justify-content:center">
+      <div class="dt-node" style="background:var(--c-terra-light);border-color:var(--c-terra);font-size:12px">_interrupt_requested=True → break</div>
+    </div>
+  </div>
+
+  <div class="card card-s" style="margin-top:16px">
+    <div class="card-hdr"><span class="chip chip-s">对比</span> interrupt vs steer</div>
+    <div class="card-body">
+      <strong>interrupt()：</strong>立即设置标志位 + 线程信号 → Agent 在下次循环检查时 break → 用中断消息启动新一轮 run_conversation()<br>
+      <strong>steer()：</strong>不设置标志位 → 等待当前工具批次完成 → 将指引文本追加到最后一个 tool 消息的 content → 模型下一次迭代自然看到
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab 4: 容错与重试 ===== -->
+<div class="tc" data-tab="tab4">
+  <div class="dt">容错与重试策略</div>
+  <div class="ds">按错误类型分类处理的内部重试循环</div>
+  <table class="cmp-table">
+    <tr><th>错误类型</th><th>检测方式</th><th>处理策略</th></tr>
+    <tr>
+      <td><strong>Auth 失败</strong></td>
+      <td>401 HTTP 状态码</td>
+      <td>重新解析 runtime credentials<br>copilot / nous / anthropic 各有独立重试逻辑</td>
+    </tr>
+    <tr>
+      <td><strong>Rate Limit</strong></td>
+      <td>429 HTTP / rate limit headers</td>
+      <td>等待 retry-after 间隔<br>Nous Portal 有进程级 rate guard</td>
+    </tr>
+    <tr>
+      <td><strong>Context 超限</strong></td>
+      <td>context_length_exceeded 错误</td>
+      <td>触发上下文压缩 → 最多 3 次压缩尝试<br>压缩后重置 retry 计数器</td>
+    </tr>
+    <tr>
+      <td><strong>JSON 损坏</strong></td>
+      <td>JSON parse error</td>
+      <td>修复 tool_call 参数<br>_invalid_json_retries 计数（最多 3 次）</td>
+    </tr>
+    <tr>
+      <td><strong>空响应</strong></td>
+      <td>模型返回空 content</td>
+      <td>注入重试提示<br>_empty_content_retries 计数（最多 2 次）</td>
+    </tr>
+    <tr>
+      <td><strong>Provider 故障</strong></td>
+      <td>连接超时 / 服务不可用</td>
+      <td>尝试 fallback provider<br>切换后重置所有 retry 计数器</td>
+    </tr>
+    <tr>
+      <td><strong>死连接清理</strong></td>
+      <td>TCP 僵尸连接</td>
+      <td>每轮开始前检测并清理<br>_cleanup_dead_connections()</td>
+    </tr>
+  </table>
+  <div class="insight">
+    <strong>容错哲学：</strong>每个错误类型都有独立的 retry 计数器和处理策略，互不干扰。Fallback provider 切换是"核选项"——一旦激活，所有后续轮次都使用 fallback，直到下一次 run_conversation() 恢复主 provider。
+  </div>
+</div>
+
+<!-- ===== Tab 5: 三向循环对比 ===== -->
+<div class="tc" data-tab="tab5">
+  <div class="dt">三向循环对比</div>
+  <div class="ds">Hermes vs Gemini CLI vs Claude Code 的对话循环设计哲学</div>
+  <table class="cmp-table">
+    <tr><th>维度</th><th>Hermes</th><th>Gemini CLI</th><th>Claude Code</th></tr>
+    <tr>
+      <td><strong>循环模型</strong></td>
+      <td>while 同步循环</td>
+      <td>四阶段（Map→Route→Execute→Iterate）</td>
+      <td>async generator</td>
+    </tr>
+    <tr>
+      <td><strong>预算管理</strong></td>
+      <td>双层：max_iterations + IterationBudget</td>
+      <td>单层：maxIterations</td>
+      <td>单层：maxTurns</td>
+    </tr>
+    <tr>
+      <td><strong>父子共享预算</strong></td>
+      <td>✓（IterationBudget 实例继承）</td>
+      <td>✗（子 Agent 独立预算）</td>
+      <td>✗（Fork 独立）</td>
+    </tr>
+    <tr>
+      <td><strong>中断机制</strong></td>
+      <td>标志位 + 线程信号</td>
+      <td>AbortController</td>
+      <td>CancellationToken</td>
+    </tr>
+    <tr>
+      <td><strong>中断作用域隔离</strong></td>
+      <td>线程 ID（多 Agent 隔离）</td>
+      <td>AbortSignal 链</td>
+      <td>Token 链</td>
+    </tr>
+    <tr>
+      <td><strong>体面告别</strong></td>
+      <td>Budget Grace Call（最后一次 API）</td>
+      <td>无</td>
+      <td>无</td>
+    </tr>
+    <tr>
+      <td><strong>容错策略</strong></td>
+      <td>按错误类型分类 + Fallback Provider</td>
+      <td>统一 retry 策略</td>
+      <td>统一 retry + tool-level 容错</td>
+    </tr>
+    <tr>
+      <td><strong>Steer/运行时注入</strong></td>
+      <td>/steer（不中断，附加到工具结果）</td>
+      <td>无</td>
+      <td>无</td>
+    </tr>
+    <tr>
+      <td><strong>System Prompt 缓存</strong></td>
+      <td>会话级缓存 + DB 存储</td>
+      <td>每次重建</td>
+      <td>每次重建</td>
+    </tr>
+    <tr>
+      <td><strong>语言</strong></td>
+      <td>Python</td>
+      <td>TypeScript</td>
+      <td>TypeScript</td>
+    </tr>
+  </table>
+  <div class="insight">
+    <strong>架构选择：</strong>Python 生态天然偏向同步模型——<code>while</code> 循环比 async generator 更容易调试，多线程信号比 asyncio 事件更容易跨平台。Hermes 把异步能力（流式输出、中断、子 Agent）都嫁接在同步循环的固定边界点上，而非把整个循环变成异步。这是一种务实的工程选择。
+  </div>
+</div>
+
+<div class="footer">Hermes Agent 深度拆解 · 第 02 篇 · Agent 执行内核 · 同步循环、中断与容错</div>
+</div>
+
+<script>
+(function(){
+  var tabs = document.querySelectorAll('.tabs .tab');
+  var panes = document.querySelectorAll('.tc');
+  tabs.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var key = btn.getAttribute('data-tab');
+      tabs.forEach(function(b){ b.classList.remove('active'); });
+      panes.forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      var pane = document.querySelector('.tc[data-tab="' + key + '"]');
+      if(pane) pane.classList.add('active');
+    });
+  });
+})();
+</script>
+</body>
+</html>
