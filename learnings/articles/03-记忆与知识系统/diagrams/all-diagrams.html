@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes 记忆与知识系统 — 全景图集</title>
+<style>
+/* ===== Hermes 手写风色彩体系 ===== */
+:root {
+  --c-bg: #fefcf3; --c-canvas: #fff; --c-yellow: #f5c518;
+  --c-yellow-light: #fff8dc; --c-yellow-mid: #fce588;
+  --c-black: #1a1a1a; --c-gray: #8a7e6b; --c-gray-light: #d4ccb8;
+  --c-red: #e05555; --c-green: #4caf50; --c-blue: #5b9bd5; --c-purple: #8b5cf6;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'SF Mono', Monaco, Consolas, monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:var(--font-ui); background:var(--c-bg); color:var(--c-black);
+  display:flex; justify-content:center; padding:40px 20px; min-height:100vh;
+}
+.C{
+  background:var(--c-canvas); border:2px solid var(--c-gray-light);
+  border-radius:8px; padding:32px 36px; width:1280px; min-width:1280px;
+}
+
+/* ===== Header ===== */
+.header{margin-bottom:28px;text-align:center}
+.main-title{font-size:28px;font-weight:700;color:var(--c-black);margin-bottom:4px}
+.main-title span{color:var(--c-yellow)}
+.subtitle{font-size:14px;color:var(--c-gray)}
+
+/* ===== Tab System ===== */
+.tabs{display:flex;gap:3px;margin-bottom:24px;border-bottom:2px solid var(--c-gray-light);flex-wrap:wrap}
+.tab{padding:9px 15px;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:13px;font-weight:500;color:var(--c-gray);position:relative;bottom:-2px;white-space:nowrap;font-family:var(--font-ui);transition:color 0.2s}
+.tab:hover{color:var(--c-black)}
+.tab.active{color:var(--c-yellow);border-bottom-color:var(--c-yellow);font-weight:700}
+.tc{display:none}
+.tc.active{display:block;border:2px solid var(--c-gray-light);border-radius:10px;padding:24px 20px 20px;background:#fefef9}
+.dt{font-size:22px;font-weight:700;color:var(--c-black);margin-bottom:4px;text-align:center}
+.ds{font-size:14px;color:var(--c-gray);text-align:center;margin-bottom:20px;line-height:1.5}
+
+/* ===== Chip 标签系统 ===== */
+.chip{font-size:12px;font-weight:600;padding:2px 8px;border-radius:4px;display:inline-block;white-space:nowrap}
+.chip-y{background:var(--c-yellow-light);color:#92400e}
+.chip-b{background:#dbeafe;color:#1e40af}
+.chip-g{background:#dcfce7;color:#166534}
+.chip-r{background:#fee2e2;color:#991b1b}
+.chip-p{background:#ede9fe;color:#5b21b6}
+.chip-o{background:#ffedd5;color:#c2410c}
+.chip-gray{background:#f3f4f6;color:#6b7280}
+
+/* ===== Card 卡片系统 ===== */
+.card{border:2px solid var(--c-gray-light);border-radius:8px;overflow:hidden;margin-bottom:8px}
+.card-hdr{padding:8px 14px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.card-body{padding:12px 14px;font-size:13px;line-height:1.6}
+.card-yellow{border-color:var(--c-yellow-mid)}.card-yellow .card-hdr{background:var(--c-yellow-light);color:#92400e}
+.card-blue{border-color:#93c5fd}.card-blue .card-hdr{background:#dbeafe;color:#1e40af}
+.card-green{border-color:#86efac}.card-green .card-hdr{background:#dcfce7;color:#166534}
+.card-red{border-color:#fca5a5}.card-red .card-hdr{background:#fef2f2;color:#991b1b}
+.card-purple{border-color:#c4b5fd}.card-purple .card-hdr{background:#ede9fe;color:#5b21b6}
+.card-orange{border-color:#fdba74}.card-orange .card-hdr{background:#fff7ed;color:#c2410c}
+
+/* ===== Layer 层叠系统 ===== */
+.L{display:flex;border:2px solid var(--c-gray-light);border-radius:8px;overflow:hidden;margin-bottom:3px}
+.L-tag{width:110px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 8px}
+.L-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;margin-bottom:4px}
+.L-label{font-size:13px;font-weight:700;text-align:center;line-height:1.2}
+.L-body{flex:1;padding:10px 14px;display:flex;flex-direction:column;gap:4px}
+.L-title{font-size:15px;font-weight:700;color:var(--c-black);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.L-row{display:flex;align-items:center;gap:6px;font-size:13px;line-height:1.5}
+.L-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.L-name{font-weight:700;font-family:var(--font-mono);font-size:12px;min-width:140px;flex-shrink:0}
+.L-right{width:200px;flex-shrink:0;padding:8px 12px;border-left:1px dashed var(--c-gray-light);display:flex;flex-direction:column;justify-content:center;gap:3px}
+.L-right-title{font-size:12px;font-weight:700;color:#374151;margin-bottom:1px}
+.L-right-item{font-size:12px;color:var(--c-gray);line-height:1.4}
+
+/* Layer color variants (yellow gradient scale) */
+.L.l1 .L-tag{background:var(--c-yellow-light)}.L.l1 .L-label{color:#92400e}
+.L.l1 .L-num{background:var(--c-yellow)}
+.L.l2 .L-tag{background:#fef9e7}.L.l2 .L-label{color:#b8960b}
+.L.l2 .L-num{background:#e8c547}
+.L.l3 .L-tag{background:#fef5d4}.L.l3 .L-label{color:#9a8219}
+.L.l3 .L-num{background:#d4a017}
+.L.l4 .L-tag{background:#fef0c0}.L.l4 .L-label{color:#7a5a08}
+.L.l4 .L-num{background:#b8860b}
+.L.l5 .L-tag{background:#f3f4f6}.L.l5 .L-label{color:#6b7280}
+.L.l5 .L-num{background:#9ca3af}
+.L.l6 .L-tag{background:#dcfce7}.L.l6 .L-label{color:#166534}
+.L.l6 .L-num{background:var(--c-green)}
+.L.l7 .L-tag{background:#ede9fe}.L.l7 .L-label{color:#5b21b6}
+.L.l7 .L-num{background:var(--c-purple)}
+
+.L-conn{display:flex;align-items:center;padding:2px 0 2px 48px;gap:6px;font-size:13px;color:var(--c-gray)}
+.L-boundary{display:flex;align-items:center;gap:6px;padding:5px 14px;background:var(--c-yellow-light);border:1px dashed var(--c-yellow);border-radius:4px;margin:4px 0;font-size:14px;font-weight:700;color:#92400e}
+.L-bottom{display:flex;gap:16px;margin-top:8px;padding:8px 14px;background:#f9fafb;border-radius:6px;border:1px solid var(--c-gray-light);font-size:13px;color:var(--c-gray)}
+.L-bottom b{color:#374151}
+
+/* ===== Stage Bar 流程条 ===== */
+.stage-bar{display:flex;align-items:stretch;gap:0;margin-bottom:14px;border-radius:10px;overflow:hidden;border:2px solid var(--c-gray-light)}
+.stage-cell{flex:1;padding:12px 14px;color:#fff;display:flex;align-items:center;gap:10px;min-width:0}
+.stage-cell .stage-num{width:36px;height:36px;background:rgba(255,255,255,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0}
+.stage-cell .stage-text{flex:1;min-width:0}
+.stage-cell .stage-title{font-size:14px;font-weight:800;line-height:1.2}
+.stage-cell .stage-sub{font-size:11px;opacity:.85;margin-top:2px;line-height:1.3}
+.stage-arrow{display:flex;align-items:center;padding:0 6px;font-size:18px;font-weight:700;color:var(--c-gray)}
+.stage-cell.s1{background:linear-gradient(135deg,#b8960b,var(--c-yellow))}
+.stage-cell.s2{background:linear-gradient(135deg,#92400e,#d4a017)}
+.stage-cell.s3{background:linear-gradient(135deg,#166534,var(--c-green))}
+.stage-cell.s4{background:linear-gradient(135deg,#1e40af,var(--c-blue))}
+.stage-cell.s5{background:linear-gradient(135deg,#5b21b6,#8b5cf6)}
+.stage-cell.s6{background:linear-gradient(135deg,#991b1b,var(--c-red))}
+
+/* ===== Phase Panel 阶段面板 ===== */
+.phase-panel{border:3px solid;border-radius:10px;overflow:hidden;margin-bottom:8px}
+.phase-hdr{padding:8px 14px;color:#fff;display:flex;align-items:center;gap:10px}
+.phase-num{width:36px;height:36px;background:rgba(255,255,255,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;flex-shrink:0}
+.phase-info{flex:1;min-width:0}
+.phase-title{font-size:15px;font-weight:800;line-height:1.2}
+.phase-meta{font-size:11px;opacity:.85;margin-top:2px}
+.phase-tag{padding:3px 8px;background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.4);border-radius:4px;font-size:11px;font-weight:700;white-space:nowrap}
+.phase-body{padding:10px 12px;display:grid;gap:8px}
+.phase-body.g2{grid-template-columns:repeat(2,1fr)}
+.phase-body.g3{grid-template-columns:repeat(3,1fr)}
+.phase-panel.p1{border-color:var(--c-yellow)}.phase-panel.p1 .phase-hdr{background:linear-gradient(135deg,#b8960b,var(--c-yellow))}.phase-panel.p1 .phase-body{background:var(--c-yellow-light)}
+.phase-panel.p2{border-color:var(--c-green)}.phase-panel.p2 .phase-hdr{background:linear-gradient(135deg,#166534,var(--c-green))}.phase-panel.p2 .phase-body{background:#f0fdf4}
+.phase-panel.p3{border-color:var(--c-purple)}.phase-panel.p3 .phase-hdr{background:linear-gradient(135deg,#5b21b6,var(--c-purple))}.phase-panel.p3 .phase-body{background:#f5f3ff}
+.phase-panel.p4{border-color:#94a3b8}.phase-panel.p4 .phase-hdr{background:linear-gradient(135deg,#475569,#94a3b8)}.phase-panel.p4 .phase-body{background:#f8fafc}
+.phase-panel.p5{border-color:var(--c-red)}.phase-panel.p5 .phase-hdr{background:linear-gradient(135deg,#991b1b,var(--c-red))}.phase-panel.p5 .phase-body{background:#fef2f2}
+
+/* ===== Flow Row 流程节点 ===== */
+.flow-row{display:flex;align-items:center;gap:0;margin-bottom:8px;flex-wrap:wrap}
+.flow-node{border:1.5px solid var(--c-gray-light);border-radius:8px;padding:10px 14px;min-width:120px;text-align:center;background:var(--c-canvas)}
+.flow-node .fn-title{font-size:14px;font-weight:700;color:var(--c-black)}
+.flow-node .fn-sub{font-size:12px;color:var(--c-gray);font-family:var(--font-mono);margin-top:3px}
+.flow-node.fn-yellow{border-color:var(--c-yellow-mid);background:var(--c-yellow-light)}
+.flow-node.fn-blue{border-color:#93c5fd;background:#eff6ff}
+.flow-node.fn-green{border-color:#86efac;background:#f0fdf4}
+.flow-node.fn-red{border-color:#fca5a5;background:#fef2f2}
+.flow-node.fn-purple{border-color:#c4b5fd;background:#f5f3ff}
+.flow-arrow{font-size:16px;color:var(--c-gray);margin:0 6px;font-weight:700}
+
+/* ===== cmp2 对比双栏 ===== */
+.cmp2{display:flex;gap:14px;align-items:stretch}
+.cmp2-col{flex:1;border:2.5px solid;border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.cmp2-hdr{padding:12px 16px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cmp2-title{font-size:15px;font-weight:800}
+.cmp2-sub{font-size:11px;opacity:.85;margin-top:2px}
+.cmp2-tag{padding:3px 8px;background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.4);border-radius:4px;font-size:11px;font-weight:700}
+.cmp2-body{padding:12px 14px;background:var(--c-canvas);flex:1}
+.cmp2-row{display:flex;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:12px;line-height:1.5}
+.cmp2-row:last-child{border-bottom:none}
+.cmp2-k{font-weight:700;min-width:80px;color:#374151;flex-shrink:0}
+.cmp2-v{flex:1;color:#475569}
+.cmp2-vs{display:flex;align-items:center;font-size:24px;font-weight:900;color:var(--c-gray);padding:0 4px}
+.cmp2-col.cy{border-color:var(--c-yellow)}.cmp2-col.cy .cmp2-hdr{background:linear-gradient(135deg,#b8960b,var(--c-yellow))}
+.cmp2-col.cb{border-color:var(--c-blue)}.cmp2-col.cb .cmp2-hdr{background:linear-gradient(135deg,#1e40af,var(--c-blue))}
+
+/* ===== Cover 封面专用 ===== */
+.cover-wrap{text-align:center;padding:60px 40px}
+.cover-icon{font-size:64px;margin-bottom:16px}
+.cover-title{font-size:36px;font-weight:800;color:var(--c-black);margin-bottom:8px}
+.cover-divider{width:120px;height:4px;background:var(--c-yellow);margin:16px auto;border-radius:2px}
+.cover-sub{font-size:16px;color:var(--c-gray);margin-bottom:24px;line-height:1.6}
+.cover-chips{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.cover-chip{font-size:13px;padding:6px 16px;border:2px solid var(--c-yellow);border-radius:20px;color:var(--c-black);font-weight:600;background:var(--c-yellow-light)}
+
+/* ===== Insight 洞察块 ===== */
+.insight{padding:12px 16px;background:var(--c-yellow-light);border:1px solid var(--c-yellow-mid);border-radius:8px;font-size:13px;color:#92400e;line-height:1.6;margin-top:12px}
+.insight b{color:#636100}
+
+/* ===== Footer Note ===== */
+.footer-note{margin-top:14px;padding:10px 14px;background:#f9fafb;border-radius:6px;border:1px solid var(--c-gray-light);font-size:12px;color:var(--c-gray);text-align:center}
+.footer-note b{color:#374151}
+
+/* ===== Table ===== */
+.tbl{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+.tbl th{padding:6px 10px;text-align:left;background:#f8fafc;border-bottom:2px solid var(--c-gray-light);font-weight:700;font-size:13px}
+.tbl td{padding:5px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top;line-height:1.4}
+.fn{font-family:var(--font-mono);font-size:12px;background:#f3f4f6;padding:1px 5px;border-radius:3px}
+
+/* ===== Utility ===== */
+.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mb-8{margin-bottom:8px}.mb-12{margin-bottom:12px}
+.flex{display:flex}.gap-8{gap:8px}.gap-10{gap:10px}.gap-12{gap:12px}.gap-14{gap:14px}
+.text-center{text-align:center}
+</style>
+</head>
+<body>
+<div class="C">
+
+<!-- ===== Header ===== -->
+<div class="header">
+  <div class="main-title">03 · 记忆与知识系统 — <span>全景图集</span></div>
+  <div class="subtitle">双层记忆架构 · 可插拔Provider · 知识转化流水线 · Curator自进化闭环 | 共 7 张图</div>
+</div>
+
+<!-- ===== Tab Navigation ===== -->
+<div class="tabs">
+  <button class="tab active" data-tab="0">Tab0 · 封面</button>
+  <button class="tab" data-tab="1">Tab1 · 架构全景</button>
+  <button class="tab" data-tab="2">Tab2 · Provider生命周期</button>
+  <button class="tab" data-tab="3">Tab3 · Provider对比</button>
+  <button class="tab" data-tab="4">Tab4 · 知识转化</button>
+  <button class="tab" data-tab="5">Tab5 · Skill生命周期</button>
+  <button class="tab" data-tab="6">Tab6 · Curator审查</button>
+</div>
+
+<!-- ===== Tab 0: 封面 ===== -->
+<div class="tc active" data-tab="0">
+<div class="cover-wrap">
+  <div class="cover-icon">🧠</div>
+  <div class="cover-title">Hermes 记忆与知识系统</div>
+  <div class="cover-divider"></div>
+  <div class="cover-sub">双层架构与自进化闭环<br>从「被动记忆」到「主动知识管理」的范式跃迁</div>
+  <div class="cover-chips">
+    <span class="cover-chip">双层记忆架构</span>
+    <span class="cover-chip">可插拔Provider</span>
+    <span class="cover-chip">Memory→Skill→Curator</span>
+    <span class="cover-chip">Review Fork</span>
+  </div>
+</div>
+<div class="footer-note" style="margin-top:32px;">Hermes Agent 源码解析 系列 03 | 配图版本 v2.0 · Tab 交互模式</div>
+</div>
+
+<!-- ===== Tab 1: 架构全景 ===== -->
+<div class="tc" data-tab="1">
+<div class="dt">记忆与知识系统全景架构</div>
+<div class="ds">四层协同运转的知识转化体系：Built-in Memory（声明性）→ External Provider（可插拔）→ Skill（过程性）→ Curator（自主维护）</div>
+
+<!-- L1: Built-in Memory -->
+<div class="L l1">
+  <div class="L-tag">
+    <div class="L-num">1</div>
+    <div class="L-label">Built-in<br>Memory</div>
+  </div>
+  <div class="L-body">
+    <div class="L-title">声明性记忆层 — 文件即知识 <span class="chip chip-y">双层架构-内层</span></div>
+    <div class="L-row"><span class="L-dot" style="background:var(--c-yellow)"></span><span class="fn">MEMORY.md</span> — 跨会话持久化，项目级知识索引</div>
+    <div class="L-row"><span class="L-dot" style="background:var(--c-yellow)"></span><span class="fn">USER.md</span> — 用户画像与偏好，全局用户记忆</div>
+    <div class="L-row"><span class="L-dot" style="background:var(--c-yellow)"></span>注入方式：System Prompt 拼接，无需额外 API 调用</div>
+  </div>
+  <div class="L-right">
+    <span class="chip chip-y">零延迟</span>
+    <div class="L-right-item">文件系统存储</div>
+    <div class="L-right-item">Markdown 纯文本</div>
+  </div>
+</div>
+
+<div style="text-align:center;font-size:18px;color:var(--c-gray);margin:4px 0;">▾ 可插拔扩展层 ▾</div>
+
+<!-- L2: External Memory Provider -->
+<div class="L l2">
+  <div class="L-tag">
+    <div class="L-num">2</div>
+    <div class="L-label">External<br>Provider</div>
+  </div>
+  <div class="L-body">
+    <div class="L-title">可插拔记忆Provider — MemoryProvider ABC 接口 <span class="chip chip-y">双层架构-外层</span></div>
+    <div class="L-row"><span class="L-dot" style="background:#e8c547"></span>单Provider约束：一次只能激活一个外部Provider</div>
+    <div class="L-row"><span class="L-dot" style="background:#e8c547"></span>Honcho Provider — 辩证用户建模（你"说"了什么 → 你"是"什么）</div>
+    <div class="L-row"><span class="L-dot" style="background:#e8c547"></span>Mem0 Provider — 服务端事实提取（对话 → 结构化事实卡片）</div>
+    <div class="L-row"><span class="L-dot" style="background:#e8c547"></span>MemoryManager 编排器 — 广播+容错隔离模式</div>
+  </div>
+  <div class="L-right">
+    <span class="chip chip-b">可插拔</span>
+    <div class="L-right-item">7个生命周期方法</div>
+    <div class="L-right-item">广播+容错隔离</div>
+  </div>
+</div>
+
+<div style="text-align:center;font-size:18px;color:var(--c-gray);margin:4px 0;">▾ 知识升华层 ▾</div>
+
+<!-- L3: Skill System -->
+<div class="L l3">
+  <div class="L-tag">
+    <div class="L-num">3</div>
+    <div class="L-label">Skill<br>System</div>
+  </div>
+  <div class="L-body">
+    <div class="L-title">过程性知识层 — 声明性记忆的过程化表达 <span class="chip chip-g">知识转化</span></div>
+    <div class="L-row"><span class="L-dot" style="background:#d4a017"></span>agentskills.io 开放标准 + YAML frontmatter 元数据</div>
+    <div class="L-row"><span class="L-dot" style="background:#d4a017"></span>六状态生命周期：created → used → graded → improved → consolidated / archived</div>
+    <div class="L-row"><span class="L-dot" style="background:#d4a017"></span>Review Fork 机制：每轮后 fork 子进程审视是否更新技能</div>
+  </div>
+  <div class="L-right">
+    <span class="chip chip-g">过程性</span>
+    <div class="L-right-item">开放标准</div>
+    <div class="L-right-item">6状态机</div>
+  </div>
+</div>
+
+<div style="text-align:center;font-size:18px;color:var(--c-gray);margin:4px 0;">▾ 自主维护层 ▾</div>
+
+<!-- L4: Curator -->
+<div class="L l4">
+  <div class="L-tag">
+    <div class="L-num">4</div>
+    <div class="L-label">Curator</div>
+  </div>
+  <div class="L-body">
+    <div class="L-title">自主知识管家 — 7天周期后台审查 <span class="chip chip-r">自进化</span></div>
+    <div class="L-row"><span class="L-dot" style="background:#b8860b"></span>三层分类信号：absorbed_into参数 / YAML摘要变化 / 工具调用证据</div>
+    <div class="L-row"><span class="L-dot" style="background:#b8860b"></span>rubric-based 评分机制：决定 consolidate（固化）还是 archive（归档）</div>
+    <div class="L-row"><span class="L-dot" style="background:#b8860b"></span>安全防线：只允许工具调用证据充分的操作，防止误操作</div>
+  </div>
+  <div class="L-right">
+    <span class="chip chip-r">自主</span>
+    <div class="L-right-item">7天周期</div>
+    <div class="L-right-item">三层分类</div>
+  </div>
+</div>
+
+<div class="insight"><b>四层递进关系</b>：Built-in Memory（声明性·文件存储）→ External Provider（可插拔·矢量检索）→ Skill（过程性·可执行）→ Curator（自主性·自进化）。每层建立在前一层之上，形成从「记什么」到「怎么用」再到「如何自主进化」的完整知识生命周期。</div>
+
+<div class="footer-note">关键源码：<b>agent/memory/memory_manager.py</b> · <b>agent/memory/providers/</b> · <b>agent/skills/</b> · <b>cron/curator.py</b></div>
+</div>
+
+<!-- ===== Tab 2: Provider 生命周期 ===== -->
+<div class="tc" data-tab="2">
+<div class="dt">MemoryProvider 生命周期 — 7个核心方法</div>
+<div class="ds">ABC 抽象基类定义的完整编排时序：initialize → prefetch → sync_turn → system_prompt_block → get_tool_schemas → handle_tool_call → shutdown</div>
+
+<!-- Stage bar: 7 stages -->
+<div class="stage-bar">
+  <div class="stage-cell s1"><div class="stage-num">1</div><div class="stage-text"><div class="stage-title">initialize</div><div class="stage-sub">会话启动</div></div></div>
+  <div class="stage-cell s2"><div class="stage-num">2</div><div class="stage-text"><div class="stage-title">prefetch</div><div class="stage-sub">预取记忆</div></div></div>
+  <div class="stage-cell s3"><div class="stage-num">3</div><div class="stage-text"><div class="stage-title">sync_turn</div><div class="stage-sub">每轮同步</div></div></div>
+  <div class="stage-cell s4"><div class="stage-num">4</div><div class="stage-text"><div class="stage-title">sys_prompt</div><div class="stage-sub">注入上下文</div></div></div>
+  <div class="stage-cell s5"><div class="stage-num">5</div><div class="stage-text"><div class="stage-title">tool_schemas</div><div class="stage-sub">工具声明</div></div></div>
+  <div class="stage-cell s6"><div class="stage-num">6</div><div class="stage-text"><div class="stage-title">tool_call</div><div class="stage-sub">工具执行</div></div></div>
+  <div class="stage-cell s5"><div class="stage-num">7</div><div class="stage-text"><div class="stage-title">shutdown</div><div class="stage-sub">会话结束</div></div></div>
+</div>
+
+<!-- 7 Cards grid 4+3 -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;">
+  <div class="card card-yellow">
+    <div class="card-hdr">① initialize</div>
+    <div class="card-body" style="font-size:12px;">会话启动时调用<br>建立连接、初始化客户端<br><span class="chip chip-y">会话级</span></div>
+  </div>
+  <div class="card card-yellow">
+    <div class="card-hdr">② prefetch</div>
+    <div class="card-body" style="font-size:12px;">预取相关记忆<br>基于用户查询异步检索<br><span class="chip chip-y">⭐ 热路径</span></div>
+  </div>
+  <div class="card card-blue">
+    <div class="card-hdr">③ sync_turn</div>
+    <div class="card-body" style="font-size:12px;">每轮结束后同步<br>写入新记忆到Provider<br><span class="chip chip-b">轮次级</span></div>
+  </div>
+  <div class="card card-green">
+    <div class="card-hdr">④ system_prompt_block</div>
+    <div class="card-body" style="font-size:12px;">生成注入到System Prompt<br>的记忆文本块<br><span class="chip chip-g">上下文注入</span></div>
+  </div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+  <div class="card card-purple">
+    <div class="card-hdr">⑤ get_tool_schemas</div>
+    <div class="card-body" style="font-size:12px;">Provider自定义工具声明<br>注册到工具系统<br><span class="chip chip-p">工具扩展</span></div>
+  </div>
+  <div class="card card-red">
+    <div class="card-hdr">⑥ handle_tool_call</div>
+    <div class="card-body" style="font-size:12px;">处理Provider特定工具<br>调用分发与结果返回<br><span class="chip chip-r">工具执行</span></div>
+  </div>
+  <div class="card card-blue">
+    <div class="card-hdr">⑦ shutdown</div>
+    <div class="card-body" style="font-size:12px;">会话结束清理<br>关闭连接、释放资源<br><span class="chip chip-b">资源释放</span></div>
+  </div>
+</div>
+
+<div class="insight"><b>prefetch 是热路径核心</b>：在 initialize 完成后立即异步执行，基于用户首条消息的语义检索相关记忆。它的性能直接影响首轮响应延迟。其余6个方法是编排框架的固定钩子，provider 可选择实现。</div>
+
+<div class="footer-note">关键源码：<b>agent/memory/providers/provider.py</b> — MemoryProvider ABC · <b>agent/memory/memory_manager.py</b> — MemoryManager 编排器</div>
+</div>
+
+<!-- ===== Tab 3: Provider 对比 ===== -->
+<div class="tc" data-tab="3">
+<div class="dt">Provider 对比矩阵 — Honcho vs Mem0</div>
+<div class="ds">两种截然不同的哲学：辩证用户建模（推导你是怎样的人）vs 服务端事实提取（捕获对话中的客观事实）</div>
+
+<div class="cmp2">
+  <!-- 左列：Honcho 黄 -->
+  <div class="cmp2-col cy">
+    <div class="cmp2-hdr">
+      <div><div class="cmp2-title">🔮 Honcho</div><div class="cmp2-sub">辩证用户建模</div></div>
+      <div class="cmp2-tag">自托管</div>
+    </div>
+    <div class="cmp2-body">
+      <div class="cmp2-row"><div class="cmp2-k">核心理念</div><div class="cmp2-v"><span class="chip chip-y">推导"你是怎样的人"</span> — 你说什么 → 你是什么</div></div>
+      <div class="cmp2-row"><div class="cmp2-k">数据模型</div><div class="cmp2-v">User → Session → Message → Metamessage<br>四层嵌套关系模型</div></div>
+      <div class="cmp2-row"><div class="cmp2-k">记忆类型</div><div class="cmp2-v">用户画像、偏好推断、行为模式<br>主观性记忆</div></div>
+      <div class="cmp2-row"><div class="cmp2-k">部署模式</div><div class="cmp2-v">自托管 Python 服务</div></div>
+      <div class="cmp2-row"><div class="cmp2-k">检索方式</div><div class="cmp2-v">基于对话历史的语义检索 + 用户向量</div></div>
+    </div>
+  </div>
+  <!-- VS -->
+  <div class="cmp2-vs">VS</div>
+  <!-- 右列：Mem0 蓝 -->
+  <div class="cmp2-col cb">
+    <div class="cmp2-hdr">
+      <div><div class="cmp2-title">🧩 Mem0</div><div class="cmp2-sub">服务端事实提取</div></div>
+      <div class="cmp2-tag">云服务</div>
+    </div>
+    <div class="cmp2-body">
+      <div class="cmp2-row"><div class="cmp2-k">核心理念</div><div class="cmp2-v"><span class="chip chip-b">捕获"对话中的客观事实"</span> — 对话 → 结构化事实卡片</div></div>
+      <div class="cmp2-row"><div class="cmp2-k">数据模型</div><div class="cmp2-v">扁平记忆卡片 + 矢量索引<br>无用户层级建模</div></div>
+      <div class="cmp2-row"><div class="cmp2-k">记忆类型</div><div class="cmp2-v">项目事实、技术决策、代码偏好<br>客观性记忆</div></div>
+      <div class="cmp2-row"><div class="cmp2-k">部署模式</div><div class="cmp2-v">SaaS 云服务 API</div></div>
+      <div class="cmp2-row"><div class="cmp2-k">检索方式</div><div class="cmp2-v">基于语义相似度的矢量检索 + 过滤</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="insight"><b>单Provider约束</b>：MemoryManager 一次只允许激活一个外部 Provider。这不是技术限制，而是设计选择 — 避免多个 Provider 的记忆注入产生冲突与冗余。选择 Honcho 获得深度用户理解，选择 Mem0 获得广度事实覆盖。</div>
+
+<div class="footer-note">关键源码：<b>agent/memory/providers/honcho_provider.py</b> · <b>agent/memory/providers/mem0_provider.py</b> · <b>agent/memory/memory_manager.py</b></div>
+</div>
+
+<!-- ===== Tab 4: 知识转化流水线 ===== -->
+<div class="tc" data-tab="4">
+<div class="dt">知识转化流水线 — Memory → Skill → Curator</div>
+<div class="ds">三级转化体系：声明性记忆（What）→ 过程性技能（How）→ 自主知识管家（Evolve）</div>
+
+<!-- P1 黄 — Memory 阶段 -->
+<div class="phase-panel p1">
+  <div class="phase-hdr">
+    <div class="phase-num">1</div>
+    <div class="phase-info"><div class="phase-title">Memory 声明性记忆</div><div class="phase-meta">知识积累的原始材料</div></div>
+    <div class="phase-tag">记忆层</div>
+  </div>
+  <div class="phase-body g3">
+    <div class="card card-yellow" style="margin-bottom:0;">
+      <div class="card-hdr">📝 文件记忆</div>
+      <div class="card-body" style="font-size:12px;"><span class="fn">MEMORY.md</span> 跨会话持久化<br><span class="fn">USER.md</span> 用户画像<br>Markdown 纯文本存储</div>
+    </div>
+    <div class="card card-yellow" style="margin-bottom:0;">
+      <div class="card-hdr">🔌 Provider记忆</div>
+      <div class="card-body" style="font-size:12px;">Honcho 用户建模<br>Mem0 事实提取<br>矢量检索 + 语义匹配</div>
+    </div>
+    <div class="card card-yellow" style="margin-bottom:0;">
+      <div class="card-hdr">🔄 Review Fork</div>
+      <div class="card-body" style="font-size:12px;">每轮后 fork 子进程<br>审视是否更新记忆<br>rubric-based 评分</div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-row" style="justify-content:center;margin:8px 0;">
+  <div class="flow-arrow" style="font-size:22px;">▾ 转化触发 ▾</div>
+</div>
+
+<!-- P2 绿 — Skill 阶段 -->
+<div class="phase-panel p2">
+  <div class="phase-hdr">
+    <div class="phase-num">2</div>
+    <div class="phase-info"><div class="phase-title">Skill 过程性技能</div><div class="phase-meta">记忆的过程化表达，可执行的知识</div></div>
+    <div class="phase-tag">技能层</div>
+  </div>
+  <div class="phase-body g2">
+    <div>
+      <div style="font-size:14px;font-weight:700;color:#111827;margin-bottom:6px;">📐 agentskills.io 标准</div>
+      <div style="font-size:12px;line-height:1.8;color:#475569;">
+        • YAML frontmatter 元数据（name, description, triggers）<br>
+        • Markdown body 技能指令<br>
+        • 工具声明与权限绑定<br>
+        • 六状态生命周期完整闭环
+      </div>
+    </div>
+    <div>
+      <div style="font-size:14px;font-weight:700;color:#111827;margin-bottom:6px;">🔍 Review Fork 机制</div>
+      <div style="font-size:12px;line-height:1.8;color:#475569;">
+        • 每轮 Agent 对话后 fork 子进程<br>
+        • 审视对话内容是否值得提炼为 Skill<br>
+        • rubric 评分决定：improve / consolidate / archive<br>
+        • 上下文隔离，不影响主对话流
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-row" style="justify-content:center;margin:8px 0;">
+  <div class="flow-arrow" style="font-size:22px;">▾ 自主进化 ▾</div>
+</div>
+
+<!-- P3 紫 — Curator 阶段 -->
+<div class="phase-panel p3">
+  <div class="phase-hdr">
+    <div class="phase-num">3</div>
+    <div class="phase-info"><div class="phase-title">Curator 自主知识管家</div><div class="phase-meta">7天周期后台审查，知识库自我维护</div></div>
+    <div class="phase-tag">进化层</div>
+  </div>
+  <div class="phase-body g3">
+    <div class="card card-purple" style="margin-bottom:0;">
+      <div class="card-hdr">📊 三层分类信号</div>
+      <div class="card-body" style="font-size:12px;">absorbed_into 参数<br>YAML 摘要变化<br>工具调用证据</div>
+    </div>
+    <div class="card card-purple" style="margin-bottom:0;">
+      <div class="card-hdr">⚖️ Rubric 评分</div>
+      <div class="card-body" style="font-size:12px;">多维度评分矩阵<br>决定 consolidate<br>还是 archive</div>
+    </div>
+    <div class="card card-purple" style="margin-bottom:0;">
+      <div class="card-hdr">🛡️ 安全防线</div>
+      <div class="card-body" style="font-size:12px;">只允许充分证据<br>的操作通过<br>防止误删误改</div>
+    </div>
+  </div>
+</div>
+
+<div class="insight"><b>知识转化三阶段</b>：Memory 是「记什么」（声明性知识），Skill 是「怎么用」（过程性知识），Curator 是「如何进化」（自主维护）。Review Fork 是连接 Memory 和 Skill 的桥梁 — 每轮对话后审视是否需要将对话中的经验提炼为可复用的技能。</div>
+
+<div class="footer-note">关键源码：<b>agent/memory/</b> · <b>agent/skills/</b> · <b>cron/curator.py</b></div>
+</div>
+
+<!-- ===== Tab 5: Skill 生命周期 ===== -->
+<div class="tc" data-tab="5">
+<div class="dt">Skill 生命周期状态机 — 六状态完整闭环</div>
+<div class="ds">agentskills.io 标准定义的六状态：created → used → graded → improved → consolidated/archived</div>
+
+<!-- Stage bar: 6 states -->
+<div class="stage-bar">
+  <div class="stage-cell s3"><div class="stage-num">c</div><div class="stage-text"><div class="stage-title">created</div><div class="stage-sub">新建</div></div></div>
+  <div class="stage-cell s1"><div class="stage-num">u</div><div class="stage-text"><div class="stage-title">used</div><div class="stage-sub">使用中</div></div></div>
+  <div class="stage-cell s2"><div class="stage-num">g</div><div class="stage-text"><div class="stage-title">graded</div><div class="stage-sub">已评分</div></div></div>
+  <div class="stage-cell s5"><div class="stage-num">i</div><div class="stage-text"><div class="stage-title">improved</div><div class="stage-sub">改进中</div></div></div>
+  <div class="stage-cell s4"><div class="stage-num">C</div><div class="stage-text"><div class="stage-title">consolidated</div><div class="stage-sub">已固化</div></div></div>
+  <div class="stage-cell s6"><div class="stage-num">A</div><div class="stage-text"><div class="stage-title">archived</div><div class="stage-sub">已归档</div></div></div>
+</div>
+
+<!-- 6 Cards grid -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px;">
+  <div class="card card-green">
+    <div class="card-hdr">① created — 新建</div>
+    <div class="card-body" style="font-size:12px;">从 Memory 中提炼或用户直接创建<br>YAML frontmatter 初始化<br><span class="chip chip-g">入口状态</span></div>
+  </div>
+  <div class="card card-blue">
+    <div class="card-hdr">② used — 使用中</div>
+    <div class="card-body" style="font-size:12px;">Skill 被 Agent 触发使用<br>记录使用频率与效果<br><span class="chip chip-b">活跃状态</span></div>
+  </div>
+  <div class="card card-yellow">
+    <div class="card-hdr">③ graded — 已评分</div>
+    <div class="card-body" style="font-size:12px;">Review Fork rubric 评分<br>评估技能质量与效用<br><span class="chip chip-y">决策前置</span></div>
+  </div>
+  <div class="card card-purple">
+    <div class="card-hdr">④ improved — 改进中</div>
+    <div class="card-body" style="font-size:12px;">评分不足 → 触发改进<br>补充指令 / 优化描述<br><span class="chip chip-p">反馈循环</span></div>
+  </div>
+  <div class="card card-green">
+    <div class="card-hdr">⑤ consolidated — 已固化</div>
+    <div class="card-body" style="font-size:12px;">多次高分 → 稳定固化<br>成为可靠的知识资产<br><span class="chip chip-g">✅ 终态</span></div>
+  </div>
+  <div class="card card-red">
+    <div class="card-hdr">⑥ archived — 已归档</div>
+    <div class="card-body" style="font-size:12px;">过时/低效 → 归档保存<br>不活跃但可追溯<br><span class="chip chip-r">🗄️ 终态</span></div>
+  </div>
+</div>
+
+<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;font-size:13px;">
+  <span style="padding:4px 10px;background:var(--c-yellow-light);border-radius:4px;font-weight:700;">improved → used</span>
+  <span style="color:var(--c-gray);">循环直到</span>
+  <span style="padding:4px 10px;background:#dcfce7;border-radius:4px;font-weight:700;">consolidated</span>
+  <span style="color:var(--c-gray);">或</span>
+  <span style="padding:4px 10px;background:#fef2f2;border-radius:4px;font-weight:700;">archived</span>
+</div>
+
+<div class="insight"><b>关键设计：improved → used 反馈循环</b> — graded 评分不足的 Skill 不会立即归档，而是进入 improved 状态重新打磨，再回到 used 重新验证。这个循环体现了「持续改进」的设计哲学：知识不是一次性产物，是持续迭代的活系统。</div>
+
+<div class="footer-note">关键标准：<b>agentskills.io</b> · 实现源码：<b>agent/skills/</b> · 评分机制：<b>cron/curator.py</b></div>
+</div>
+
+<!-- ===== Tab 6: Curator 审查流程 ===== -->
+<div class="tc" data-tab="6">
+<div class="dt">Curator 自主审查流程 — 7天周期与三层分类信号</div>
+<div class="ds">后台知识管家：扫描 → 分类 → 评分 → 决策 → 执行，五步自主维护知识库</div>
+
+<!-- 五步流程 Layer -->
+<div class="L l1">
+  <div class="L-tag"><div class="L-num">1</div><div class="L-label">扫描</div></div>
+  <div class="L-body">
+    <div class="L-title">7天周期扫描知识库 <span class="chip chip-y">定时触发</span></div>
+    <div class="L-row"><span class="L-dot" style="background:var(--c-yellow)"></span>cron 守护进程 7 天周期唤醒</div>
+    <div class="L-row"><span class="L-dot" style="background:var(--c-yellow)"></span>扫描所有 Memory 条目和 Skill 状态</div>
+  </div>
+  <div class="L-right"><span class="chip chip-y">cron</span><div class="L-right-item">7天周期</div></div>
+</div>
+
+<div style="text-align:center;font-size:18px;color:var(--c-gray);margin:4px 0;">▼</div>
+
+<div class="L l2">
+  <div class="L-tag"><div class="L-num">2</div><div class="L-label">分类</div></div>
+  <div class="L-body">
+    <div class="L-title">三层分类信号收集 <span class="chip chip-y">多维判断</span></div>
+    <div class="L-row"><span class="L-dot" style="background:#e8c547"></span><b>信号1 absorbed_into</b>：该知识是否已被其他条目吸收合并</div>
+    <div class="L-row"><span class="L-dot" style="background:#e8c547"></span><b>信号2 YAML摘要</b>：元数据摘要是否发生变化（内容是否有更新）</div>
+    <div class="L-row"><span class="L-dot" style="background:#e8c547"></span><b>信号3 工具调用证据</b>：最近对话中是否有工具调用印证该知识的有效性</div>
+  </div>
+  <div class="L-right"><span class="chip chip-b">3层</span><div class="L-right-item">absorbed_into<br>YAML摘要<br>工具调用</div></div>
+</div>
+
+<div style="text-align:center;font-size:18px;color:var(--c-gray);margin:4px 0;">▼</div>
+
+<div class="L l3">
+  <div class="L-tag"><div class="L-num">3</div><div class="L-label">评分</div></div>
+  <div class="L-body">
+    <div class="L-title">Rubric-based 多维度评分 <span class="chip chip-g">量化评估</span></div>
+    <div class="L-row"><span class="L-dot" style="background:#d4a017"></span>新鲜度评分：知识距今多久未被使用</div>
+    <div class="L-row"><span class="L-dot" style="background:#d4a017"></span>效用评分：知识在对话中被引用的频率与效果</div>
+    <div class="L-row"><span class="L-dot" style="background:#d4a017"></span>完整性评分：知识条目本身的信息完整程度</div>
+  </div>
+  <div class="L-right"><span class="chip chip-g">rubric</span><div class="L-right-item">新鲜度·效用·完整性</div></div>
+</div>
+
+<div style="text-align:center;font-size:18px;color:var(--c-gray);margin:4px 0;">▼</div>
+
+<div class="L l4">
+  <div class="L-tag"><div class="L-num">4</div><div class="L-label">决策</div></div>
+  <div class="L-body">
+    <div class="L-title">基于评分做出操作决策 <span class="chip chip-r">双路分支</span></div>
+    <div class="L-row"><span class="L-dot" style="background:#b8860b"></span><b>consolidate</b>：高分知识 → 固化为长期资产（标记为稳定可靠）</div>
+    <div class="L-row"><span class="L-dot" style="background:#b8860b"></span><b>archive</b>：低分知识 → 归档保存（不活跃但可追溯）</div>
+  </div>
+  <div class="L-right"><span class="chip chip-r">双路</span><div class="L-right-item">consolidate<br>archive</div></div>
+</div>
+
+<div style="text-align:center;font-size:18px;color:var(--c-gray);margin:4px 0;">▼</div>
+
+<div class="L l6">
+  <div class="L-tag"><div class="L-num">5</div><div class="L-label">执行</div></div>
+  <div class="L-body">
+    <div class="L-title">安全执行操作 <span class="chip chip-g">安全防线</span></div>
+    <div class="L-row"><span class="L-dot" style="background:var(--c-green)"></span>只有工具调用证据充分的决策才允许执行</div>
+    <div class="L-row"><span class="L-dot" style="background:var(--c-green)"></span>防止基于"推断"而非"证据"的误操作</div>
+  </div>
+  <div class="L-right"><span class="chip chip-g">🛡️</span><div class="L-right-item">证据充分才执行</div></div>
+</div>
+
+<!-- 安全防线信息 -->
+<div class="insight"><b>安全防线是 Curator 最精妙的设计</b>：即使 rubric 评分再高，如果缺乏「工具调用证据」（即最近对话中没有实际的工具调用印证该知识的有效性），操作也不会被执行。这防止了 Agent 基于「推断」而非「事实」做出错误的知识管理决策。</div>
+
+<div class="footer-note">关键源码：<b>cron/curator.py</b> · 三层分类信号定义 · rubric 评分矩阵 · 安全防线逻辑</div>
+</div>
+
+</div><!-- close .C -->
+
+<script>
+(function(){
+  var tabs = document.querySelectorAll('.tabs .tab');
+  var panes = document.querySelectorAll('.tc');
+  tabs.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var key = btn.getAttribute('data-tab');
+      tabs.forEach(function(b){ b.classList.remove('active'); });
+      panes.forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      var pane = document.querySelector('.tc[data-tab="' + key + '"]');
+      if(pane) pane.classList.add('active');
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
