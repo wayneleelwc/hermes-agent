@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes CLI 与 TUI 双界面 — 皮肤引擎与命令系统</title>
+<style>
+:root {
+  --c-bg: #faf8f5; --c-canvas: #fff; --c-ink: #2d2d2d;
+  --c-terra: #c75b39; --c-terra-light: #fdf0ea;
+  --c-sage: #4a7c59; --c-sage-light: #eef5ef;
+  --c-slate: #5b6b7a; --c-slate-light: #f0f3f5;
+  --c-burg: #8b3a3a; --c-burg-light: #fdf2f2;
+  --c-amber: #b8751e; --c-amber-light: #fef8f0;
+  --c-moss: #5c7a4a; --c-moss-light: #f4f7f0;
+  --c-border: #e5e0d8; --c-border-light: #f0ece6;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-serif: Georgia, 'Times New Roman', 'Songti SC', 'SimSun', serif;
+  --font-mono: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-sans);background:var(--c-bg);color:var(--c-ink);display:flex;justify-content:center;padding:40px 20px;min-height:100vh}
+.C{background:var(--c-canvas);border:1px solid var(--c-border);box-shadow:0 1px 3px rgba(0,0,0,.04);padding:40px 44px;width:1280px;min-width:1280px}
+.header{margin-bottom:32px;text-align:center}
+.main-title{font-family:var(--font-serif);font-size:28px;font-weight:700;color:var(--c-ink);margin-bottom:4px;letter-spacing:-0.3px}
+.main-title em{font-style:normal;color:var(--c-terra)}
+.subtitle{font-size:14px;color:var(--c-slate);font-weight:400}
+
+.tabs{display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid var(--c-border);flex-wrap:wrap}
+.tab{padding:10px 18px;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:13px;font-weight:500;color:var(--c-slate);font-family:var(--font-sans);transition:all 0.2s;letter-spacing:0.2px}
+.tab:hover{color:var(--c-ink)}
+.tab.active{color:var(--c-terra);border-bottom-color:var(--c-terra);font-weight:600}
+.tc{display:none}
+.tc.active{display:block;border:1px solid var(--c-border);padding:28px 24px 24px;background:var(--c-canvas);box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.dt{font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--c-ink);margin-bottom:4px;text-align:center}
+.ds{font-size:14px;color:var(--c-slate);text-align:center;margin-bottom:24px;line-height:1.6}
+
+.chip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:2px;display:inline-block;white-space:nowrap;letter-spacing:0.3px}
+.chip-t{background:var(--c-terra-light);color:var(--c-terra)}
+.chip-s{background:var(--c-sage-light);color:var(--c-sage)}
+.chip-b{background:var(--c-burg-light);color:var(--c-burg)}
+.chip-a{background:var(--c-amber-light);color:var(--c-amber)}
+.chip-m{background:var(--c-moss-light);color:var(--c-moss)}
+.chip-sl{background:var(--c-slate-light);color:var(--c-slate)}
+
+.card{border:1px solid var(--c-border);border-left:4px solid var(--c-border);margin-bottom:6px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.card-hdr{padding:9px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;background:var(--c-border-light);border-bottom:1px solid var(--c-border)}
+.card-body{padding:12px 14px;font-size:13px;line-height:1.6;background:var(--c-canvas)}
+.card-t{border-left-color:var(--c-terra)}.card-t .card-hdr{background:var(--c-terra-light);color:var(--c-terra)}
+.card-s{border-left-color:var(--c-sage)}.card-s .card-hdr{background:var(--c-sage-light);color:var(--c-sage)}
+.card-b{border-left-color:var(--c-burg)}.card-b .card-hdr{background:var(--c-burg-light);color:var(--c-burg)}
+.card-a{border-left-color:var(--c-amber)}.card-a .card-hdr{background:var(--c-amber-light);color:var(--c-amber)}
+.card-m{border-left-color:var(--c-moss)}.card-m .card-hdr{background:var(--c-moss-light);color:var(--c-moss)}
+
+.L{display:flex;border:1px solid var(--c-border);margin-bottom:2px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.L-tag{width:110px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 8px;border-right:1px solid var(--c-border)}
+.L-num{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:15px;font-weight:700;margin-bottom:4px}
+.L-label{font-size:12px;font-weight:700;text-align:center;line-height:1.2;font-family:var(--font-sans)}
+.L-body{flex:1;padding:12px 16px;display:flex;flex-direction:column;gap:4px}
+.L-title{font-size:14px;font-weight:700;color:var(--c-ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.L-row{display:flex;align-items:center;gap:6px;font-size:13px;line-height:1.5}
+.L-dot{width:6px;height:6px;flex-shrink:0}
+.L-name{font-weight:700;font-family:var(--font-mono);font-size:12px;min-width:160px;flex-shrink:0;color:var(--c-slate)}
+.L-right{width:220px;flex-shrink:0;padding:10px 14px;border-left:1px solid var(--c-border);display:flex;flex-direction:column;justify-content:center;gap:3px;background:var(--c-border-light)}
+.L-right-title{font-size:11px;font-weight:700;color:var(--c-ink);margin-bottom:1px}
+.L-right-item{font-size:12px;color:var(--c-slate);line-height:1.4}
+
+.L.l1 .L-tag{background:var(--c-terra-light)}.L.l1 .L-label{color:var(--c-terra)}.L.l1 .L-num{background:var(--c-terra);color:#fff}
+.L.l2 .L-tag{background:#fef5f0}.L.l2 .L-label{color:#b8542e}
+.L.l3 .L-tag{background:var(--c-sage-light)}.L.l3 .L-label{color:var(--c-sage)}.L.l3 .L-num{background:var(--c-sage);color:#fff}
+.L.l4 .L-tag{background:var(--c-slate-light)}.L.l4 .L-label{color:var(--c-slate)}.L.l4 .L-num{background:var(--c-slate);color:#fff}
+.L.l5 .L-tag{background:var(--c-amber-light)}.L.l5 .L-label{color:var(--c-amber)}.L.l5 .L-num{background:var(--c-amber);color:#fff}
+
+.stage-bar{display:flex;align-items:stretch;gap:2px;margin-bottom:16px}
+.stage-cell{flex:1;padding:12px 10px;color:#fff;display:flex;align-items:center;gap:8px;min-width:0}
+.stage-cell .stage-num{width:28px;height:28px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:14px;font-weight:700;flex-shrink:0}
+.stage-cell .stage-text{flex:1;min-width:0}
+.stage-cell .stage-title{font-size:13px;font-weight:700;line-height:1.2}
+.stage-cell .stage-sub{font-size:10px;opacity:.8;margin-top:1px;line-height:1.3}
+.stage-cell.st1{background:var(--c-terra)}.stage-cell.st2{background:#d4734a}
+.stage-cell.st3{background:var(--c-sage)}.stage-cell.st4{background:var(--c-slate)}
+.stage-cell.st5{background:var(--c-moss)}.stage-cell.st6{background:var(--c-burg)}
+
+.flow-row{display:flex;align-items:center;gap:0;margin:16px 0;flex-wrap:wrap}
+.flow-node{flex:1;min-width:110px;text-align:center;padding:14px 10px;border:1px solid var(--c-border);background:var(--c-canvas);box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.flow-node .fn-title{font-size:14px;font-weight:700;color:var(--c-ink);margin-bottom:2px}
+.flow-node .fn-sub{font-size:11px;color:var(--c-slate);line-height:1.4}
+.flow-arrow{padding:0 4px;color:var(--c-terra);font-size:18px;font-weight:700;flex-shrink:0}
+
+.cmp-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px}
+.cmp-table th{background:var(--c-terra-light);color:var(--c-terra);padding:10px 12px;text-align:left;font-weight:700;border:1px solid var(--c-border);font-size:12px}
+.cmp-table td{padding:9px 12px;border:1px solid var(--c-border);line-height:1.5}
+.cmp-table tr:nth-child(even) td{background:var(--c-border-light)}
+
+.insight{border-left:4px solid var(--c-sage);background:var(--c-sage-light);padding:14px 18px;margin:16px 0;font-size:13px;line-height:1.7}
+.insight strong{color:var(--c-sage)}
+.footer{margin-top:16px;text-align:center;font-size:11px;color:var(--c-slate);line-height:1.6}
+.dual-panel{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.dual-panel .panel{border:1px solid var(--c-border);padding:16px;background:var(--c-canvas)}
+.dual-panel .panel-title{font-size:14px;font-weight:700;color:var(--c-ink);margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--c-border)}
+.dual-panel .panel-item{font-size:12px;color:var(--c-slate);line-height:1.6;margin-bottom:4px}
+</style>
+</head>
+<body>
+<div class="C">
+
+<div class="header">
+  <div class="main-title">CLI 与 TUI 双界面 — <em>皮肤引擎与命令系统</em></div>
+  <div class="subtitle">Hermes Agent · 第 07 篇 · 双界面架构深度拆解</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="tab0">封面</button>
+  <button class="tab" data-tab="tab1">双界面全景</button>
+  <button class="tab" data-tab="tab2">TUI 通信架构</button>
+  <button class="tab" data-tab="tab3">命令注册表</button>
+  <button class="tab" data-tab="tab4">三向对标</button>
+</div>
+
+<!-- ===== Tab 0: 封面 ===== -->
+<div class="tc active" data-tab="tab0">
+  <div class="dt">CLI 与 TUI 双界面</div>
+  <div class="ds">第 07 篇 · 皮肤引擎与命令系统</div>
+  <div class="stage-bar">
+    <div class="stage-cell st1"><div class="stage-num">1</div><div class="stage-text"><div class="stage-title">CLI 模式</div><div class="stage-sub">prompt_toolkit REPL</div></div></div>
+    <div class="stage-cell st2"><div class="stage-num">2</div><div class="stage-text"><div class="stage-title">TUI 模式</div><div class="stage-sub">Ink React + JSON-RPC</div></div></div>
+    <div class="stage-cell st3"><div class="stage-num">3</div><div class="stage-text"><div class="stage-title">命令系统</div><div class="stage-sub">COMMAND_REGISTRY</div></div></div>
+    <div class="stage-cell st4"><div class="stage-num">4</div><div class="stage-text"><div class="stage-title">皮肤引擎</div><div class="stage-sub">主题 + 动画 + Emoji</div></div></div>
+    <div class="stage-cell st5"><div class="stage-num">5</div><div class="stage-text"><div class="stage-title">设置向导</div><div class="stage-sub">setup.py ~3,500 行</div></div></div>
+  </div>
+  <div style="text-align:center;margin-top:16px">
+    <span class="chip chip-t">prompt_toolkit</span>
+    <span class="chip chip-s">Ink React</span>
+    <span class="chip chip-a">JSON-RPC</span>
+    <span class="chip chip-sl">皮肤引擎</span>
+    <span class="chip chip-b">斜杠命令</span>
+  </div>
+  <div class="insight">
+    <strong>核心命题：</strong>Hermes 同时提供 CLI（prompt_toolkit）和 TUI（Ink React）两种界面，两者共享同一个 AIAgent 内核。差异仅在 I/O 层——CLI 直接调用内核方法，TUI 通过 tui_gateway 的 JSON-RPC 桥接。皮肤引擎让终端体验高度可定制。
+  </div>
+</div>
+
+<!-- ===== Tab 1: 双界面全景 ===== -->
+<div class="tc" data-tab="tab1">
+  <div class="dt">双界面全景</div>
+  <div class="ds">CLI 和 TUI 共享 AIAgent 内核，差异仅在渲染层</div>
+
+  <div class="dual-panel">
+    <div class="panel" style="border-left:4px solid var(--c-terra)">
+      <div class="panel-title"><span class="chip chip-t">CLI</span> 终端交互模式</div>
+      <div class="panel-item"><strong>技术栈：</strong>prompt_toolkit (Python)</div>
+      <div class="panel-item"><strong>核心文件：</strong>cli.py (~11,500 行)</div>
+      <div class="panel-item"><strong>启动：</strong>hermes / hermes --model claude</div>
+      <div class="panel-item"><strong>特点：</strong>REPL 风格、斜杠命令、皮肤主题</div>
+      <div class="panel-item"><strong>设置向导：</strong>setup.py (~3,500 行) 首次交互配置</div>
+    </div>
+    <div class="panel" style="border-left:4px solid var(--c-sage)">
+      <div class="panel-title"><span class="chip chip-s">TUI</span> 终端 UI 模式</div>
+      <div class="panel-item"><strong>技术栈：</strong>Ink React (TypeScript) + Python 后端</div>
+      <div class="panel-item"><strong>核心文件：</strong>ui-tui/src/ + tui_gateway/</div>
+      <div class="panel-item"><strong>启动：</strong>hermes --tui</div>
+      <div class="panel-item"><strong>特点：</strong>React 组件化渲染、JSON-RPC 通信</div>
+      <div class="panel-item"><strong>通信桥：</strong>tui_gateway/ JSON-RPC over stdio</div>
+    </div>
+  </div>
+
+  <div class="flow-row">
+    <div class="flow-node"><div class="fn-title">用户输入</div><div class="fn-sub">键盘 + 终端</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><div class="fn-title">界面层</div><div class="fn-sub">CLI (ptk) / TUI (React)</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><div class="fn-title">AIAgent</div><div class="fn-sub">run_conversation()</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><div class="fn-title">界面层</div><div class="fn-sub">流式渲染 / React 组件</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><div class="fn-title">用户看到</div><div class="fn-sub">终端输出</div></div>
+  </div>
+</div>
+
+<!-- ===== Tab 2: TUI 通信架构 ===== -->
+<div class="tc" data-tab="tab2">
+  <div class="dt">TUI JSON-RPC 通信架构</div>
+  <div class="ds">Ink React 前端通过 tui_gateway 桥接 Python 后端</div>
+
+  <div class="card card-t">
+    <div class="card-hdr"><span class="chip chip-t">前端</span> Ink React 组件树</div>
+    <div class="card-body">
+      <strong>ui-tui/src/</strong> 是 TypeScript Ink React 应用。组件包括：消息列表渲染、输入框、Spinner 动画、工具调用展示、设置面板等。通过 JSON-RPC 协议与 Python 后端通信。
+    </div>
+  </div>
+
+  <div class="card card-s">
+    <div class="card-hdr"><span class="chip chip-s">通信桥</span> tui_gateway JSON-RPC</div>
+    <div class="card-body">
+      <strong>tui_gateway/</strong> 是 Python JSON-RPC 服务端，跑在 stdio 上：<br>
+      ① 接收前端 JSON-RPC 请求 → ② 转换为 AIAgent 方法调用 → ③ 流式返回结果（yield JSON chunks）→ ④ 前端 React 组件实时更新
+    </div>
+  </div>
+
+  <div class="card card-a">
+    <div class="card-hdr"><span class="chip chip-a">进程模型</span> 三进程架构</div>
+    <div class="card-body">
+      <strong>TUI React 进程</strong>（Node.js）← stdio pipe → <strong>tui_gateway 进程</strong>（Python）← 对象引用 → <strong>AIAgent</strong>（同进程）。三个层次、两个进程、一个内核。
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab 3: 命令注册表 ===== -->
+<div class="tc" data-tab="tab3">
+  <div class="dt">命令注册表</div>
+  <div class="ds">斜杠命令系统与 COMMAND_REGISTRY</div>
+
+  <table class="cmp-table">
+    <tr><th>命令</th><th>功能</th><th>作用域</th><th>实现位置</th></tr>
+    <tr><td><code>/model</code></td><td>切换模型 Provider</td><td>会话级</td><td>commands.py</td></tr>
+    <tr><td><code>/skills</code></td><td>管理 Skill 库（查看/激活/停用）</td><td>全局</td><td>commands.py</td></tr>
+    <tr><td><code>/memory</code></td><td>管理记忆（查看/编辑/清除）</td><td>会话级</td><td>commands.py</td></tr>
+    <tr><td><code>/tools</code></td><td>管理工具（列表/启用/禁用）</td><td>会话级</td><td>commands.py</td></tr>
+    <tr><td><code>/reset</code></td><td>清空当前会话上下文</td><td>会话级</td><td>commands.py</td></tr>
+    <tr><td><code>/new</code></td><td>创建全新会话</td><td>全局</td><td>commands.py</td></tr>
+    <tr><td><code>/branch</code></td><td>从当前会话分支新会话</td><td>全局</td><td>commands.py</td></tr>
+    <tr><td><code>/compact</code></td><td>手动触发上下文压缩</td><td>会话级</td><td>commands.py</td></tr>
+    <tr><td><code>/steer</code></td><td>非中断引导注入</td><td>会话级</td><td>commands.py</td></tr>
+  </table>
+
+  <div class="card card-s">
+    <div class="card-hdr"><span class="chip chip-s">派生</span> 命令注册表架构</div>
+    <div class="card-body">
+      <code>COMMAND_REGISTRY</code> 是中央注册表，每个命令注册时指定：触发词、处理函数、帮助文本、自动补全列表。CLI 和 TUI 共享同一注册表——TUI 模式通过 JSON-RPC 远程调用同一组命令处理函数。
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab 4: 三向对标 ===== -->
+<div class="tc" data-tab="tab4">
+  <div class="dt">三向对标</div>
+  <div class="ds">Hermes vs Gemini CLI vs Claude Code 的界面层对比</div>
+  <table class="cmp-table">
+    <tr><th>维度</th><th>Hermes</th><th>Gemini CLI</th><th>Claude Code</th></tr>
+    <tr>
+      <td><strong>CLI 技术</strong></td>
+      <td>prompt_toolkit (Python)</td>
+      <td>Ink React (TypeScript)</td>
+      <td>Ink React (TypeScript)</td>
+    </tr>
+    <tr>
+      <td><strong>TUI 技术</strong></td>
+      <td>Ink React + JSON-RPC Bridge</td>
+      <td>无独立 TUI</td>
+      <td>无独立 TUI</td>
+    </tr>
+    <tr>
+      <td><strong>双界面模式</strong></td>
+      <td>✓ CLI + TUI 可选</td>
+      <td>单一界面</td>
+      <td>单一界面</td>
+    </tr>
+    <tr>
+      <td><strong>皮肤系统</strong></td>
+      <td>✓（skin_engine.py）</td>
+      <td>✗</td>
+      <td>✗</td>
+    </tr>
+    <tr>
+      <td><strong>Emoji 风格</strong></td>
+      <td>kawaii / neutral / minimal</td>
+      <td>固定风格</td>
+      <td>无 Emoji</td>
+    </tr>
+    <tr>
+      <td><strong>设置向导</strong></td>
+      <td>✓（setup.py ~3,500 行）</td>
+      <td>首次引导</td>
+      <td>首次引导</td>
+    </tr>
+    <tr>
+      <td><strong>斜杠命令</strong></td>
+      <td>COMMAND_REGISTRY 中央注册</td>
+      <td>ChatCommand 枚举</td>
+      <td>斜杠命令</td>
+    </tr>
+    <tr>
+      <td><strong>Spinner 动画</strong></td>
+      <td>KawaiiSpinner 多模式</td>
+      <td>标准 Spinner</td>
+      <td>标准 Spinner</td>
+    </tr>
+    <tr>
+      <td><strong>跨语言通信</strong></td>
+      <td>JSON-RPC over stdio</td>
+      <td>N/A（纯 TypeScript）</td>
+      <td>N/A（纯 TypeScript）</td>
+    </tr>
+  </table>
+  <div class="insight">
+    <strong>关键差异：</strong>Hermes 是唯一同时提供 CLI 和 TUI 两种界面的系统，也是唯一有皮肤引擎的系统。这种"双界面"设计源于 Hermes 的多入口架构——Gateway 不需要界面，CLI 需要高效 REPL，TUI 需要丰富可视化。三种场景各取所需。
+  </div>
+</div>
+
+<div class="footer">Hermes Agent 深度拆解 · 第 07 篇 · CLI 与 TUI 双界面 · 皮肤引擎与命令系统</div>
+</div>
+
+<script>
+(function(){
+  var tabs = document.querySelectorAll('.tabs .tab');
+  var panes = document.querySelectorAll('.tc');
+  tabs.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var key = btn.getAttribute('data-tab');
+      tabs.forEach(function(b){ b.classList.remove('active'); });
+      panes.forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      var pane = document.querySelector('.tc[data-tab="' + key + '"]');
+      if(pane) pane.classList.add('active');
+    });
+  });
+})();
+</script>
+</body>
+</html>

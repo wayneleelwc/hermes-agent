@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes 模型与 Provider 体系 — 30+ Provider 与动态路由</title>
+<style>
+:root {
+  --c-bg: #faf8f5; --c-canvas: #fff; --c-ink: #2d2d2d;
+  --c-terra: #c75b39; --c-terra-light: #fdf0ea;
+  --c-sage: #4a7c59; --c-sage-light: #eef5ef;
+  --c-slate: #5b6b7a; --c-slate-light: #f0f3f5;
+  --c-burg: #8b3a3a; --c-burg-light: #fdf2f2;
+  --c-amber: #b8751e; --c-amber-light: #fef8f0;
+  --c-moss: #5c7a4a; --c-moss-light: #f4f7f0;
+  --c-border: #e5e0d8; --c-border-light: #f0ece6;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-serif: Georgia, 'Times New Roman', 'Songti SC', 'SimSun', serif;
+  --font-mono: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-sans);background:var(--c-bg);color:var(--c-ink);display:flex;justify-content:center;padding:40px 20px;min-height:100vh}
+.C{background:var(--c-canvas);border:1px solid var(--c-border);box-shadow:0 1px 3px rgba(0,0,0,.04);padding:40px 44px;width:1280px;min-width:1280px}
+.header{margin-bottom:32px;text-align:center}
+.main-title{font-family:var(--font-serif);font-size:28px;font-weight:700;color:var(--c-ink);margin-bottom:4px;letter-spacing:-0.3px}
+.main-title em{font-style:normal;color:var(--c-terra)}
+.subtitle{font-size:14px;color:var(--c-slate);font-weight:400}
+
+.tabs{display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid var(--c-border);flex-wrap:wrap}
+.tab{padding:10px 18px;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:13px;font-weight:500;color:var(--c-slate);font-family:var(--font-sans);transition:all 0.2s;letter-spacing:0.2px}
+.tab:hover{color:var(--c-ink)}
+.tab.active{color:var(--c-terra);border-bottom-color:var(--c-terra);font-weight:600}
+.tc{display:none}
+.tc.active{display:block;border:1px solid var(--c-border);padding:28px 24px 24px;background:var(--c-canvas);box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.dt{font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--c-ink);margin-bottom:4px;text-align:center}
+.ds{font-size:14px;color:var(--c-slate);text-align:center;margin-bottom:24px;line-height:1.6}
+
+.chip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:2px;display:inline-block;white-space:nowrap;letter-spacing:0.3px}
+.chip-t{background:var(--c-terra-light);color:var(--c-terra)}
+.chip-s{background:var(--c-sage-light);color:var(--c-sage)}
+.chip-b{background:var(--c-burg-light);color:var(--c-burg)}
+.chip-a{background:var(--c-amber-light);color:var(--c-amber)}
+.chip-m{background:var(--c-moss-light);color:var(--c-moss)}
+.chip-sl{background:var(--c-slate-light);color:var(--c-slate)}
+
+.card{border:1px solid var(--c-border);border-left:4px solid var(--c-border);margin-bottom:6px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.card-hdr{padding:9px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;background:var(--c-border-light);border-bottom:1px solid var(--c-border)}
+.card-body{padding:12px 14px;font-size:13px;line-height:1.6;background:var(--c-canvas)}
+.card-t{border-left-color:var(--c-terra)}.card-t .card-hdr{background:var(--c-terra-light);color:var(--c-terra)}
+.card-s{border-left-color:var(--c-sage)}.card-s .card-hdr{background:var(--c-sage-light);color:var(--c-sage)}
+.card-b{border-left-color:var(--c-burg)}.card-b .card-hdr{background:var(--c-burg-light);color:var(--c-burg)}
+.card-a{border-left-color:var(--c-amber)}.card-a .card-hdr{background:var(--c-amber-light);color:var(--c-amber)}
+.card-m{border-left-color:var(--c-moss)}.card-m .card-hdr{background:var(--c-moss-light);color:var(--c-moss)}
+
+.L{display:flex;border:1px solid var(--c-border);margin-bottom:2px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.L-tag{width:110px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 8px;border-right:1px solid var(--c-border)}
+.L-num{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:15px;font-weight:700;margin-bottom:4px}
+.L-label{font-size:12px;font-weight:700;text-align:center;line-height:1.2;font-family:var(--font-sans)}
+.L-body{flex:1;padding:12px 16px;display:flex;flex-direction:column;gap:4px}
+.L-title{font-size:14px;font-weight:700;color:var(--c-ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.L-row{display:flex;align-items:center;gap:6px;font-size:13px;line-height:1.5}
+.L-dot{width:6px;height:6px;flex-shrink:0}
+.L-name{font-weight:700;font-family:var(--font-mono);font-size:12px;min-width:160px;flex-shrink:0;color:var(--c-slate)}
+.L-right{width:220px;flex-shrink:0;padding:10px 14px;border-left:1px solid var(--c-border);display:flex;flex-direction:column;justify-content:center;gap:3px;background:var(--c-border-light)}
+.L-right-title{font-size:11px;font-weight:700;color:var(--c-ink);margin-bottom:1px}
+.L-right-item{font-size:12px;color:var(--c-slate);line-height:1.4}
+
+.L.l1 .L-tag{background:var(--c-terra-light)}.L.l1 .L-label{color:var(--c-terra)}.L.l1 .L-num{background:var(--c-terra);color:#fff}
+.L.l2 .L-tag{background:#fef5f0}.L.l2 .L-label{color:#b8542e}
+.L.l3 .L-tag{background:var(--c-sage-light)}.L.l3 .L-label{color:var(--c-sage)}.L.l3 .L-num{background:var(--c-sage);color:#fff}
+.L.l4 .L-tag{background:var(--c-slate-light)}.L.l4 .L-label{color:var(--c-slate)}.L.l4 .L-num{background:var(--c-slate);color:#fff}
+.L.l5 .L-tag{background:var(--c-amber-light)}.L.l5 .L-label{color:var(--c-amber)}.L.l5 .L-num{background:var(--c-amber);color:#fff}
+
+.stage-bar{display:flex;align-items:stretch;gap:2px;margin-bottom:16px}
+.stage-cell{flex:1;padding:12px 10px;color:#fff;display:flex;align-items:center;gap:8px;min-width:0}
+.stage-cell .stage-num{width:28px;height:28px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:14px;font-weight:700;flex-shrink:0}
+.stage-cell .stage-text{flex:1;min-width:0}
+.stage-cell .stage-title{font-size:13px;font-weight:700;line-height:1.2}
+.stage-cell .stage-sub{font-size:10px;opacity:.8;margin-top:1px;line-height:1.3}
+.stage-cell.st1{background:var(--c-terra)}.stage-cell.st2{background:#d4734a}
+.stage-cell.st3{background:var(--c-sage)}.stage-cell.st4{background:var(--c-slate)}
+.stage-cell.st5{background:var(--c-moss)}.stage-cell.st6{background:var(--c-burg)}
+
+.cmp-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px}
+.cmp-table th{background:var(--c-terra-light);color:var(--c-terra);padding:10px 12px;text-align:left;font-weight:700;border:1px solid var(--c-border);font-size:12px}
+.cmp-table td{padding:9px 12px;border:1px solid var(--c-border);line-height:1.5}
+.cmp-table tr:nth-child(even) td{background:var(--c-border-light)}
+
+.insight{border-left:4px solid var(--c-sage);background:var(--c-sage-light);padding:14px 18px;margin:16px 0;font-size:13px;line-height:1.7}
+.insight strong{color:var(--c-sage)}
+.footer{margin-top:16px;text-align:center;font-size:11px;color:var(--c-slate);line-height:1.6}
+.decision-tree{border:1px solid var(--c-border);padding:20px;background:var(--c-canvas);box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.decision-tree .dt-row{display:flex;align-items:center;margin-bottom:6px}
+.decision-tree .dt-node{padding:10px 14px;border:1px solid var(--c-border);border-radius:2px;font-size:13px;font-weight:700;min-width:140px;text-align:center}
+.decision-tree .dt-label{font-size:11px;font-weight:600;padding:2px 8px;margin:0 8px;color:var(--c-slate)}
+.decision-tree .dt-cond{font-size:12px;color:var(--c-amber);font-weight:600;margin:0 8px}
+</style>
+</head>
+<body>
+<div class="C">
+
+<div class="header">
+  <div class="main-title">模型与 Provider 体系 — <em>30+ Provider 与动态路由</em></div>
+  <div class="subtitle">Hermes Agent · 第 09 篇 · Provider 体系深度拆解</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="tab0">封面</button>
+  <button class="tab" data-tab="tab1">Provider 体系全景</button>
+  <button class="tab" data-tab="tab2">模型解析链路</button>
+  <button class="tab" data-tab="tab3">辅助模型路由</button>
+  <button class="tab" data-tab="tab4">三向对标</button>
+</div>
+
+<!-- ===== Tab 0: 封面 ===== -->
+<div class="tc active" data-tab="tab0">
+  <div class="dt">模型与 Provider 体系</div>
+  <div class="ds">第 09 篇 · 30+ Provider 与动态路由</div>
+  <div class="stage-bar">
+    <div class="stage-cell st1"><div class="stage-num">1</div><div class="stage-text"><div class="stage-title">认证层</div><div class="stage-sub">OAuth / API Key / 外部进程</div></div></div>
+    <div class="stage-cell st2"><div class="stage-num">2</div><div class="stage-text"><div class="stage-title">身份层</div><div class="stage-sub">models.dev + HermesOverlay</div></div></div>
+    <div class="stage-cell st3"><div class="stage-num">3</div><div class="stage-text"><div class="stage-title">模型目录</div><div class="stage-sub">_PROVIDER_MODELS + 动态拉取</div></div></div>
+    <div class="stage-cell st4"><div class="stage-num">4</div><div class="stage-text"><div class="stage-title">运行时解析</div><div class="stage-sub">resolve_runtime_provider()</div></div></div>
+    <div class="stage-cell st5"><div class="stage-num">5</div><div class="stage-text"><div class="stage-title">AIAgent</div><div class="stage-sub">{key, url, mode}</div></div></div>
+  </div>
+  <div style="text-align:center;margin-top:16px">
+    <span class="chip chip-t">3 种鉴权</span>
+    <span class="chip chip-s">109+ Provider</span>
+    <span class="chip chip-a">7 级 fallback</span>
+    <span class="chip chip-sl">api_mode 自适应</span>
+    <span class="chip chip-b">Token 自动刷新</span>
+  </div>
+  <div class="insight">
+    <strong>核心命题：</strong>Hermes 的 Provider 体系设计哲学是"用户只说模型名，系统自动找 key + url + 协议"。四层架构（认证→身份→模型目录→运行时解析）让 109+ Provider 的接入对外部透明。
+  </div>
+</div>
+
+<!-- ===== Tab 1: Provider 体系全景 ===== -->
+<div class="tc" data-tab="tab1">
+  <div class="dt">Provider 体系四层架构</div>
+  <div class="ds">认证层 → 身份层 → 模型目录层 → 运行时解析层</div>
+
+  <div class="card card-t">
+    <div class="card-hdr"><span class="chip chip-t">第1层</span> 认证层 — auth.py (~4,700 行)</div>
+    <div class="card-body">
+      <strong>OAuth Device Code：</strong>Nous Portal、MiniMax、Codex、Qwen — 浏览器授权 → auth.json 持久化<br>
+      <strong>API Key Env Vars：</strong>Anthropic、OpenRouter、DeepSeek — 多环境变量链查找<br>
+      <strong>外部进程：</strong>Copilot ACP、Gemini CLI OAuth — 外部命令获取临时凭证<br>
+      <strong>Token 刷新：</strong>access token 到期前 120 秒自动刷新；Nous Portal 使用 30 分钟短效 agent key
+    </div>
+  </div>
+
+  <div class="card card-s">
+    <div class="card-hdr"><span class="chip chip-s">第2层</span> 身份层 — providers.py (~700 行)</div>
+    <div class="card-body">
+      <strong>数据源1：</strong>models.dev 动态目录（109+ Provider 完整元数据）→ 缓存到磁盘<br>
+      <strong>数据源2：</strong>HermesOverlay 本地补丁（transport / auth_type / extra_env_vars）<br>
+      <strong>数据源3：</strong>用户 config.yaml providers: 自定义覆盖<br>
+      三种传输协议：<code>openai_chat</code> | <code>anthropic_messages</code> | <code>codex_responses</code>
+    </div>
+  </div>
+
+  <div class="card card-a">
+    <div class="card-hdr"><span class="chip chip-a">第3层</span> 模型目录层 — models.py (~3,500 行)</div>
+    <div class="card-body">
+      <strong>_PROVIDER_MODELS：</strong>25+ Provider 的静态模型清单<br>
+      <strong>动态拉取：</strong>OpenRouter /v1/models、Vercel AI GW /v1/models、Codex 动态列表<br>
+      <strong>models.dev 缓存：</strong>xAI 模型从磁盘缓存推导，自动跟踪重命名<br>
+    </div>
+  </div>
+
+  <div class="card card-m">
+    <div class="card-hdr"><span class="chip chip-m">第4层</span> 运行时解析层 — runtime_provider.py (~1,300 行)</div>
+    <div class="card-body">
+      <code>resolve_runtime_provider()</code> 返回 <code>{provider, api_key, base_url, api_mode}</code><br>
+      api_mode 自动检测：<code>api.openai.com</code> → codex_responses、<code>api.minimax.io/anthropic</code> → anthropic_messages
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab 2: 模型解析链路 ===== -->
+<div class="tc" data-tab="tab2">
+  <div class="dt">模型解析链路</div>
+  <div class="ds">resolve_runtime_provider() 的完整决策树</div>
+
+  <div class="decision-tree">
+    <div class="dt-row" style="justify-content:center">
+      <div class="dt-node" style="background:var(--c-terra-light);border-color:var(--c-terra)">resolve_runtime_provider(requested="auto")</div>
+    </div>
+    <div class="dt-row" style="justify-content:center;margin:8px 0">
+      <div class="dt-cond">Step 1: resolve_requested_provider("auto")</div>
+    </div>
+    <div class="dt-row" style="justify-content:space-around">
+      <div class="dt-node" style="background:var(--c-sage-light);border-color:var(--c-sage);font-size:12px">检查 auth.json<br>活跃 OAuth Provider</div>
+      <div class="dt-node" style="background:var(--c-slate-light);border-color:var(--c-slate);font-size:12px">遍历 API Key Provider<br>检查环境变量</div>
+    </div>
+    <div class="dt-row" style="justify-content:center;margin:8px 0">
+      <div class="dt-cond">Step 2: Azure 特殊路径</div>
+    </div>
+    <div class="dt-row" style="justify-content:center">
+      <div class="dt-node" style="font-size:12px">Azure Anthropic / Azure Foundry → 直接构建 runtime</div>
+    </div>
+    <div class="dt-row" style="justify-content:center;margin:8px 0">
+      <div class="dt-cond">Step 3: 自定义端点</div>
+    </div>
+    <div class="dt-row" style="justify-content:center">
+      <div class="dt-node" style="font-size:12px">config.yaml providers: → _resolve_named_custom_runtime()</div>
+    </div>
+    <div class="dt-row" style="justify-content:center;margin:8px 0">
+      <div class="dt-cond">Step 4-7: 标准解析 → 返回 {provider, api_key, base_url, api_mode}</div>
+    </div>
+    <div class="dt-row" style="justify-content:center">
+      <div class="dt-node" style="background:var(--c-burg-light);border-color:var(--c-burg);font-size:12px">OAuth token 刷新 / API Key 读取 → CredentialPool 轮换</div>
+    </div>
+  </div>
+
+  <div class="card card-s" style="margin-top:16px">
+    <div class="card-hdr"><span class="chip chip-s">api_mode</span> 自动协议检测</div>
+    <div class="card-body">
+      <table class="cmp-table">
+        <tr><th>Base URL 特征</th><th>检测结果</th><th>原因</th></tr>
+        <tr><td>api.openai.com</td><td><code>codex_responses</code></td><td>GPT-5.x 工具调用需要 Responses API</td></tr>
+        <tr><td>api.x.ai</td><td><code>codex_responses</code></td><td>xAI 使用 Codex Responses 格式</td></tr>
+        <tr><td>*/anthropic</td><td><code>anthropic_messages</code></td><td>MiniMax、GLM 等兼容 Anthropic 协议</td></tr>
+        <tr><td>其他</td><td><code>chat_completions</code></td><td>默认 OpenAI-compatible</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab 3: 辅助模型路由 ===== -->
+<div class="tc" data-tab="tab3">
+  <div class="dt">辅助模型 fallback 链</div>
+  <div class="ds">auxiliary_client.py 的 7 级降级策略</div>
+
+  <div class="card card-t">
+    <div class="card-hdr"><span class="chip chip-t">文本任务</span> 7 级 fallback（auto 模式）</div>
+    <div class="card-body">
+      <div class="L l1"><div class="L-tag"><div class="L-num">1</div><div class="L-label">主 Provider</div></div><div class="L-body"><div class="L-title">用户当前 provider + 主模型</div><div class="L-row"><span class="L-dot" style="background:var(--c-terra)"></span>无论 provider 类型，始终优先使用</div></div></div>
+      <div class="L l2"><div class="L-tag"><div class="L-num">2</div><div class="L-label">OpenRouter</div></div><div class="L-body"><div class="L-title">OPENROUTER_API_KEY</div></div></div>
+      <div class="L l3"><div class="L-tag"><div class="L-num">3</div><div class="L-label">Nous Portal</div></div><div class="L-body"><div class="L-title">~/.hermes/auth.json 活跃 Provider</div></div></div>
+      <div class="L l4"><div class="L-tag"><div class="L-num">4</div><div class="L-label">自定义端点</div></div><div class="L-body"><div class="L-title">config.yaml model.base_url + OPENAI_API_KEY</div></div></div>
+      <div class="L l5"><div class="L-tag"><div class="L-num">5</div><div class="L-label">Anthropic</div></div><div class="L-body"><div class="L-title">原生 Anthropic API Key</div></div></div>
+      <div class="L l6"><div class="L-tag"><div class="L-num">6</div><div class="L-label">直接 API</div></div><div class="L-body"><div class="L-title">z.ai/GLM、Kimi/Moonshot、MiniMax、MiniMax-CN</div></div></div>
+      <div class="L l1"><div class="L-tag"><div class="L-num">7</div><div class="L-label">None</div></div><div class="L-body"><div class="L-title">无可用 Provider — 任务跳过</div></div></div>
+    </div>
+  </div>
+
+  <div class="card card-a">
+    <div class="card-hdr"><span class="chip chip-a">信用耗尽</span> 402 Payment Required fallback</div>
+    <div class="card-body">
+      当解析到的 provider 返回 HTTP 402 或 credit 相关错误时，<code>call_llm()</code> 自动切换到 fallback 链中的下一个可用 provider。用户可能感知不到 OpenRouter 余额耗尽——Hermes 自动 fallback 到 Codex OAuth 或 Anthropic API Key。
+    </div>
+  </div>
+
+  <div class="card card-b">
+    <div class="card-hdr"><span class="chip chip-b">Codex 排除</span> 有意不在 fallback 链</div>
+    <div class="card-body">
+      Codex OAuth 被<strong>有意排除</strong>在 fallback 链之外。原因：OpenAI 对 Codex 端点实施未公开的、持续变化的模型白名单——"just try Codex with a hardcoded model" 策略会随时间腐化。Codex 仅在用户显式选择为 main provider 时使用。
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab 4: 三向对标 ===== -->
+<div class="tc" data-tab="tab4">
+  <div class="dt">三向对标</div>
+  <div class="ds">Hermes vs Gemini CLI vs Claude Code 的 Provider 体系对比</div>
+  <table class="cmp-table">
+    <tr><th>维度</th><th>Hermes</th><th>Gemini CLI</th><th>Claude Code</th></tr>
+    <tr>
+      <td><strong>Provider 数量</strong></td>
+      <td>109+（models.dev 动态目录）</td>
+      <td>Gemini API only</td>
+      <td>Anthropic API + API Proxy</td>
+    </tr>
+    <tr>
+      <td><strong>鉴权模式</strong></td>
+      <td>3 种（OAuth / API Key / 外部进程）</td>
+      <td>OAuth2</td>
+      <td>OAuth / API Key</td>
+    </tr>
+    <tr>
+      <td><strong>Token 自动刷新</strong></td>
+      <td>✓（到期前 120 秒 + 短效 agent key）</td>
+      <td>✓（Gemini OAuth）</td>
+      <td>✓（OAuth 自动刷新）</td>
+    </tr>
+    <tr>
+      <td><strong>模型目录</strong></td>
+      <td>models.dev 动态 + 静态回退</td>
+      <td>内置</td>
+      <td>内置</td>
+    </tr>
+    <tr>
+      <td><strong>多 Key 轮换</strong></td>
+      <td>✓（CredentialPool）</td>
+      <td>✗</td>
+      <td>✗</td>
+    </tr>
+    <tr>
+      <td><strong>辅助任务路由</strong></td>
+      <td>7 级 fallback 链</td>
+      <td>单一模型</td>
+      <td>单一模型</td>
+    </tr>
+    <tr>
+      <td><strong>信用耗尽 fallback</strong></td>
+      <td>✓（402 自动切换 provider）</td>
+      <td>✗</td>
+      <td>✗</td>
+    </tr>
+    <tr>
+      <td><strong>用户自定义端点</strong></td>
+      <td>✓（config.yaml providers:）</td>
+      <td>✗</td>
+      <td>✗</td>
+    </tr>
+    <tr>
+      <td><strong>API 协议自适应</strong></td>
+      <td>✓（base URL → api_mode 自动检测）</td>
+      <td>✗</td>
+      <td>✗</td>
+    </tr>
+    <tr>
+      <td><strong>聚合器支持</strong></td>
+      <td>OpenRouter / Vercel AI GW / OpenCode</td>
+      <td>✗</td>
+      <td>✗</td>
+    </tr>
+  </table>
+  <div class="insight">
+    <strong>架构选择：</strong>Hermes 的 Provider 体系是"最大包容性"设计的代表——109+ Provider 通过三层数据融合（models.dev + HermesOverlay + 用户自定义）实现。7 级 fallback 链和 402 自动切换确保 Agent 在各种环境下保持可用。这与 Gemini CLI 的"单 Provider 深度绑定"和 Claude Code 的"Anthropic + API Proxy"策略形成鲜明对比。
+  </div>
+</div>
+
+<div class="footer">Hermes Agent 深度拆解 · 第 09 篇 · 模型与 Provider 体系 · 30+ Provider 与动态路由</div>
+</div>
+
+<script>
+(function(){
+  var tabs = document.querySelectorAll('.tabs .tab');
+  var panes = document.querySelectorAll('.tc');
+  tabs.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var key = btn.getAttribute('data-tab');
+      tabs.forEach(function(b){ b.classList.remove('active'); });
+      panes.forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      var pane = document.querySelector('.tc[data-tab="' + key + '"]');
+      if(pane) pane.classList.add('active');
+    });
+  });
+})();
+</script>
+</body>
+</html>

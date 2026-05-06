@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes 多 Agent 委派与并行 — 子进程隔离与 Batch Runner</title>
+<style>
+:root {
+  --c-bg: #faf8f5; --c-canvas: #fff; --c-ink: #2d2d2d;
+  --c-terra: #c75b39; --c-terra-light: #fdf0ea;
+  --c-sage: #4a7c59; --c-sage-light: #eef5ef;
+  --c-slate: #5b6b7a; --c-slate-light: #f0f3f5;
+  --c-burg: #8b3a3a; --c-burg-light: #fdf2f2;
+  --c-amber: #b8751e; --c-amber-light: #fef8f0;
+  --c-moss: #5c7a4a; --c-moss-light: #f4f7f0;
+  --c-border: #e5e0d8; --c-border-light: #f0ece6;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-serif: Georgia, 'Times New Roman', 'Songti SC', 'SimSun', serif;
+  --font-mono: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-sans);background:var(--c-bg);color:var(--c-ink);display:flex;justify-content:center;padding:40px 20px;min-height:100vh}
+.C{background:var(--c-canvas);border:1px solid var(--c-border);box-shadow:0 1px 3px rgba(0,0,0,.04);padding:40px 44px;width:1280px;min-width:1280px}
+.header{margin-bottom:32px;text-align:center}
+.main-title{font-family:var(--font-serif);font-size:28px;font-weight:700;color:var(--c-ink);margin-bottom:4px;letter-spacing:-0.3px}
+.main-title em{font-style:normal;color:var(--c-terra)}
+.subtitle{font-size:14px;color:var(--c-slate);font-weight:400}
+
+.tabs{display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid var(--c-border);flex-wrap:wrap}
+.tab{padding:10px 18px;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:13px;font-weight:500;color:var(--c-slate);font-family:var(--font-sans);transition:all 0.2s;letter-spacing:0.2px}
+.tab:hover{color:var(--c-ink)}
+.tab.active{color:var(--c-terra);border-bottom-color:var(--c-terra);font-weight:600}
+.tc{display:none}
+.tc.active{display:block;border:1px solid var(--c-border);padding:28px 24px 24px;background:var(--c-canvas);box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.dt{font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--c-ink);margin-bottom:4px;text-align:center}
+.ds{font-size:14px;color:var(--c-slate);text-align:center;margin-bottom:24px;line-height:1.6}
+
+.chip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:2px;display:inline-block;white-space:nowrap;letter-spacing:0.3px}
+.chip-t{background:var(--c-terra-light);color:var(--c-terra)}
+.chip-s{background:var(--c-sage-light);color:var(--c-sage)}
+.chip-b{background:var(--c-burg-light);color:var(--c-burg)}
+.chip-a{background:var(--c-amber-light);color:var(--c-amber)}
+.chip-m{background:var(--c-moss-light);color:var(--c-moss)}
+.chip-sl{background:var(--c-slate-light);color:var(--c-slate)}
+
+.card{border:1px solid var(--c-border);border-left:4px solid var(--c-border);margin-bottom:6px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.card-hdr{padding:9px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;background:var(--c-border-light);border-bottom:1px solid var(--c-border)}
+.card-body{padding:12px 14px;font-size:13px;line-height:1.6;background:var(--c-canvas)}
+.card-t{border-left-color:var(--c-terra)}.card-t .card-hdr{background:var(--c-terra-light);color:var(--c-terra)}
+.card-s{border-left-color:var(--c-sage)}.card-s .card-hdr{background:var(--c-sage-light);color:var(--c-sage)}
+.card-b{border-left-color:var(--c-burg)}.card-b .card-hdr{background:var(--c-burg-light);color:var(--c-burg)}
+.card-a{border-left-color:var(--c-amber)}.card-a .card-hdr{background:var(--c-amber-light);color:var(--c-amber)}
+.card-m{border-left-color:var(--c-moss)}.card-m .card-hdr{background:var(--c-moss-light);color:var(--c-moss)}
+
+.L{display:flex;border:1px solid var(--c-border);margin-bottom:2px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.L-tag{width:110px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 8px;border-right:1px solid var(--c-border)}
+.L-num{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:15px;font-weight:700;margin-bottom:4px}
+.L-label{font-size:12px;font-weight:700;text-align:center;line-height:1.2;font-family:var(--font-sans)}
+.L-body{flex:1;padding:12px 16px;display:flex;flex-direction:column;gap:4px}
+.L-title{font-size:14px;font-weight:700;color:var(--c-ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.L-row{display:flex;align-items:center;gap:6px;font-size:13px;line-height:1.5}
+.L-dot{width:6px;height:6px;flex-shrink:0}
+.L-name{font-weight:700;font-family:var(--font-mono);font-size:12px;min-width:160px;flex-shrink:0;color:var(--c-slate)}
+.L-right{width:220px;flex-shrink:0;padding:10px 14px;border-left:1px solid var(--c-border);display:flex;flex-direction:column;justify-content:center;gap:3px;background:var(--c-border-light)}
+.L-right-title{font-size:11px;font-weight:700;color:var(--c-ink);margin-bottom:1px}
+.L-right-item{font-size:12px;color:var(--c-slate);line-height:1.4}
+
+.L.l1 .L-tag{background:var(--c-terra-light)}.L.l1 .L-label{color:var(--c-terra)}.L.l1 .L-num{background:var(--c-terra);color:#fff}
+.L.l2 .L-tag{background:#fef5f0}.L.l2 .L-label{color:#b8542e}
+.L.l3 .L-tag{background:var(--c-sage-light)}.L.l3 .L-label{color:var(--c-sage)}.L.l3 .L-num{background:var(--c-sage);color:#fff}
+.L.l4 .L-tag{background:var(--c-slate-light)}.L.l4 .L-label{color:var(--c-slate)}.L.l4 .L-num{background:var(--c-slate);color:#fff}
+.L.l5 .L-tag{background:var(--c-amber-light)}.L.l5 .L-label{color:var(--c-amber)}.L.l5 .L-num{background:var(--c-amber);color:#fff}
+.L.l6 .L-tag{background:var(--c-burg-light)}.L.l6 .L-label{color:var(--c-burg)}.L.l6 .L-num{background:var(--c-burg);color:#fff}
+
+.cmp-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px}
+.cmp-table th{background:var(--c-terra-light);color:var(--c-terra);padding:10px 12px;text-align:left;font-weight:700;border:1px solid var(--c-border);font-size:12px}
+.cmp-table td{padding:9px 12px;border:1px solid var(--c-border);line-height:1.5}
+.cmp-table tr:nth-child(even) td{background:var(--c-border-light)}
+
+.stage-bar{display:flex;align-items:stretch;gap:2px;margin-bottom:16px}
+.stage-cell{flex:1;padding:12px 10px;color:#fff;display:flex;align-items:center;gap:8px;min-width:0}
+.stage-cell .stage-num{width:28px;height:28px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:14px;font-weight:700;flex-shrink:0}
+.stage-cell .stage-text{flex:1;min-width:0}
+.stage-cell .stage-title{font-size:13px;font-weight:700;line-height:1.2}
+.stage-cell .stage-sub{font-size:10px;opacity:.8;margin-top:1px;line-height:1.3}
+.stage-cell.st1{background:var(--c-terra)}.stage-cell.st2{background:#d4734a}
+.stage-cell.st3{background:var(--c-sage)}.stage-cell.st4{background:var(--c-slate)}
+.stage-cell.st5{background:var(--c-moss)}.stage-cell.st6{background:var(--c-burg)}
+
+.flow-row{display:flex;align-items:center;gap:0;margin:16px 0;flex-wrap:wrap}
+.flow-node{flex:1;min-width:110px;text-align:center;padding:14px 10px;border:1px solid var(--c-border);background:var(--c-canvas);box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.flow-node .fn-title{font-size:14px;font-weight:700;color:var(--c-ink);margin-bottom:2px}
+.flow-node .fn-sub{font-size:11px;color:var(--c-slate);line-height:1.4}
+.flow-arrow{padding:0 4px;color:var(--c-terra);font-size:18px;font-weight:700;flex-shrink:0}
+
+.insight{border-left:4px solid var(--c-sage);background:var(--c-sage-light);padding:14px 18px;margin:16px 0;font-size:13px;line-height:1.7}
+.insight strong{color:var(--c-sage)}
+.footer{margin-top:16px;text-align:center;font-size:11px;color:var(--c-slate);line-height:1.6}
+
+.seq-diagram{border:1px solid var(--c-border);padding:20px;background:var(--c-canvas);margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.seq-row{display:flex;align-items:center;min-height:44px;padding:6px 0;border-bottom:1px solid var(--c-border-light)}
+.seq-lbl{width:200px;flex-shrink:0;font-size:11px;font-weight:700;color:var(--c-slate);text-align:right;padding-right:16px}
+.seq-act{flex:1;font-size:13px;line-height:1.5}
+.seq-act code{font-family:var(--font-mono);font-size:11px;background:var(--c-border-light);padding:1px 6px;border-radius:2px}
+.seq-from{font-size:10px;color:var(--c-terra);font-weight:600}
+.seq-to{font-size:10px;color:var(--c-sage);font-weight:600}
+</style>
+</head>
+<body>
+<div class="C">
+
+<div class="header">
+  <div class="main-title">多 Agent 委派与并行 — <em>子进程隔离与 Batch Runner</em></div>
+  <div class="subtitle">Hermes Agent · 第 08 篇 · 多 Agent 协作架构深度拆解</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="tab0">封面</button>
+  <button class="tab" data-tab="tab1">多 Agent 全景</button>
+  <button class="tab" data-tab="tab2">delegate_task 时序</button>
+  <button class="tab" data-tab="tab3">三向对标</button>
+</div>
+
+<!-- ===== Tab 0: 封面 ===== -->
+<div class="tc active" data-tab="tab0">
+  <div class="dt">多 Agent 委派与并行</div>
+  <div class="ds">第 08 篇 · delegate_task 与 Batch Runner</div>
+  <div class="stage-bar">
+    <div class="stage-cell st1"><div class="stage-num">1</div><div class="stage-text"><div class="stage-title">委派请求</div><div class="stage-sub">父 Agent 调用 delegate_task</div></div></div>
+    <div class="stage-cell st2"><div class="stage-num">2</div><div class="stage-text"><div class="stage-title">子 Agent 创建</div><div class="stage-sub">新 AIAgent 实例 + 线程</div></div></div>
+    <div class="stage-cell st3"><div class="stage-num">3</div><div class="stage-text"><div class="stage-title">预算继承</div><div class="stage-sub">共享 IterationBudget</div></div></div>
+    <div class="stage-cell st4"><div class="stage-num">4</div><div class="stage-text"><div class="stage-title">子 Agent 执行</div><div class="stage-sub">独立循环 + 工具调用</div></div></div>
+    <div class="stage-cell st5"><div class="stage-num">5</div><div class="stage-text"><div class="stage-title">结果返回</div><div class="stage-sub">父 Agent 继续</div></div></div>
+  </div>
+  <div style="text-align:center;margin-top:16px">
+    <span class="chip chip-t">线程隔离</span>
+    <span class="chip chip-s">预算共享</span>
+    <span class="chip chip-a">中断传播</span>
+    <span class="chip chip-sl">自治执行</span>
+    <span class="chip chip-b">Batch Runner</span>
+  </div>
+  <div class="insight">
+    <strong>核心命题：</strong>Hermes 的子 Agent 运行在独立线程中，但共享父 Agent 的 IterationBudget 实例。这意味着子 Agent 的工作也是总工作的一部分——不能绕过预算限制。这是 Hermes 子 Agent 系统最独特的设计选择。
+  </div>
+</div>
+
+<!-- ===== Tab 1: 多 Agent 全景 ===== -->
+<div class="tc" data-tab="tab1">
+  <div class="dt">多 Agent 并行架构</div>
+  <div class="ds">delegate_task（线程隔离）+ Batch Runner（进程隔离）两种并行模式</div>
+
+  <div class="card card-t">
+    <div class="card-hdr"><span class="chip chip-t">delegate_task</span> 任务委派模式</div>
+    <div class="card-body">
+      <strong>场景：</strong>父 Agent 将复杂子任务委派给子 Agent 独立完成<br>
+      <strong>隔离：</strong>子 Agent 在独立线程中运行（共享进程空间）<br>
+      <strong>预算：</strong>继承父 Agent 的 IterationBudget 实例（共享池）<br>
+      <strong>中断：</strong>父 Agent 中断时递归传播到所有活跃子 Agent<br>
+      <strong>限制：</strong>子 Agent 默认 max_iterations=50（父=90）<br>
+      <strong>安全：</strong>子 Agent 默认 auto-deny 危险命令
+    </div>
+  </div>
+
+  <div class="card card-s">
+    <div class="card-hdr"><span class="chip chip-s">Batch Runner</span> 批量轨迹生成模式</div>
+    <div class="card-body">
+      <strong>场景：</strong>大规模并行生成训练/评估轨迹<br>
+      <strong>隔离：</strong>每个 worker 是独立进程（multiprocessing.Pool）<br>
+      <strong>预算：</strong>各 worker 独立预算，互不影响<br>
+      <strong>特点：</strong>skip_context_files=True（避免污染轨迹）、checkpoint 支持 resume<br>
+      <strong>用途：</strong>RL 训练数据生成、批量评估
+    </div>
+  </div>
+
+  <div class="card card-a">
+    <div class="card-hdr"><span class="chip chip-a">对比</span> 两种并行模式</div>
+    <div class="card-body">
+      <table class="cmp-table">
+        <tr><th>维度</th><th>delegate_task</th><th>Batch Runner</th></tr>
+        <tr><td><strong>并行方式</strong></td><td>线程（共享进程）</td><td>多进程（Pool）</td></tr>
+        <tr><td><strong>关系</strong></td><td>父子协作</td><td>独立 worker</td></tr>
+        <tr><td><strong>预算</strong></td><td>共享 IterationBudget</td><td>各自独立</td></tr>
+        <tr><td><strong>用途</strong></td><td>任务委派</td><td>数据生成</td></tr>
+        <tr><td><strong>上下文文件</strong></td><td>加载</td><td>跳过（避免污染）</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab 2: delegate_task 时序 ===== -->
+<div class="tc" data-tab="tab2">
+  <div class="dt">delegate_task 完整时序</div>
+  <div class="ds">从父 Agent 调用到子 Agent 返回的完整生命周期</div>
+
+  <div class="seq-diagram">
+    <div style="display:flex;justify-content:space-around;margin-bottom:12px;font-size:12px;font-weight:700;color:var(--c-slate)">
+      <div>父 Agent</div><div>delegate_tool</div><div>子 AIAgent</div><div>IterationBudget</div>
+    </div>
+    <div class="seq-row">
+      <div class="seq-lbl"><span class="seq-from">父 Agent →</span></div>
+      <div class="seq-act">调用 <code>delegate_task(prompt, context)</code> 工具</div>
+    </div>
+    <div class="seq-row">
+      <div class="seq-lbl"><span class="seq-to">delegate_tool →</span></div>
+      <div class="seq-act">解析 context、准备子 Agent 配置（max_iterations=50, auto_approve=False）</div>
+    </div>
+    <div class="seq-row">
+      <div class="seq-lbl"><span class="seq-from">delegate_tool →</span></div>
+      <div class="seq-act">创建子 AIAgent 实例，注入父 Agent 的 <code>IterationBudget</code> 共享引用</div>
+    </div>
+    <div class="seq-row">
+      <div class="seq-lbl"><span class="seq-to">子 AIAgent →</span></div>
+      <div class="seq-act">在独立线程中执行 <code>run_conversation(prompt)</code></div>
+    </div>
+    <div class="seq-row">
+      <div class="seq-lbl"><span class="seq-from">子 AIAgent →</span></div>
+      <div class="seq-act">每轮消费父 Agent 的共享预算 <code>budget.consume()</code></div>
+    </div>
+    <div class="seq-row">
+      <div class="seq-lbl"><span class="seq-to">父 Agent 中断</span></div>
+      <div class="seq-act"><code>interrupt()</code> → <code>_set_interrupt(child_tid)</code> → 子 Agent 循环检查 break</div>
+    </div>
+    <div class="seq-row">
+      <div class="seq-lbl"><span class="seq-from">子 AIAgent →</span></div>
+      <div class="seq-act">执行完毕 → 返回结果文本给父 Agent</div>
+    </div>
+    <div class="seq-row">
+      <div class="seq-lbl"><span class="seq-to">⤴ 父 Agent</span></div>
+      <div class="seq-act">接收子 Agent 结果 → 纳入当前消息上下文 → 继续主循环</div>
+    </div>
+  </div>
+
+  <div class="card card-b">
+    <div class="card-hdr"><span class="chip chip-b">安全约束</span> 子 Agent 的 5 层隔离</div>
+    <div class="card-body">
+      ① <strong>线程隔离：</strong>独立线程运行，崩溃不影响父 Agent<br>
+      ② <strong>预算隔离：</strong>共享预算池，不能绕过总限制<br>
+      ③ <strong>中断传播：</strong>父中断 → 递归传播到所有子 Agent<br>
+      ④ <strong>工具限制：</strong>max_iterations=50（父=90）<br>
+      ⑤ <strong>审批安全：</strong>默认 auto-deny 危险命令
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab 3: 三向对标 ===== -->
+<div class="tc" data-tab="tab3">
+  <div class="dt">三向对标</div>
+  <div class="ds">Hermes vs Gemini CLI vs Claude Code 的多 Agent 设计对比</div>
+  <table class="cmp-table">
+    <tr><th>维度</th><th>Hermes</th><th>Gemini CLI</th><th>Claude Code</th></tr>
+    <tr>
+      <td><strong>子 Agent 模型</strong></td>
+      <td>delegate_task（线程隔离）</td>
+      <td>LocalAgent + BrowserAgent</td>
+      <td>Fork + Task</td>
+    </tr>
+    <tr>
+      <td><strong>进程隔离</strong></td>
+      <td>线程（同进程）</td>
+      <td>独立进程</td>
+      <td>独立进程 / 线程</td>
+    </tr>
+    <tr>
+      <td><strong>预算共享</strong></td>
+      <td>✓（IterationBudget 实例继承）</td>
+      <td>✗（各自独立）</td>
+      <td>✗（各自独立）</td>
+    </tr>
+    <tr>
+      <td><strong>中断传播</strong></td>
+      <td>递归传播到所有子 Agent</td>
+      <td>独立中断</td>
+      <td>独立中断</td>
+    </tr>
+    <tr>
+      <td><strong>Batch 模式</strong></td>
+      <td>multiprocessing Pool + checkpoint</td>
+      <td>无</td>
+      <td>无</td>
+    </tr>
+    <tr>
+      <td><strong>子 Agent 安全</strong></td>
+      <td>auto-deny + max_iterations 限制</td>
+      <td>沙箱限制</td>
+      <td>审批 + 沙箱</td>
+    </tr>
+    <tr>
+      <td><strong>轨迹生成</strong></td>
+      <td>Batch Runner skip_context_files</td>
+      <td>无</td>
+      <td>无</td>
+    </tr>
+    <tr>
+      <td><strong>语言</strong></td>
+      <td>Python（threading + multiprocessing）</td>
+      <td>TypeScript（child_process）</td>
+      <td>TypeScript（child_process）</td>
+    </tr>
+  </table>
+  <div class="insight">
+    <strong>架构选择：</strong>Hermes 选择线程级隔离而非进程级，核心原因是共享预算。共享预算使整体成本可控——父 Agent 和所有子 Agent 从同一个池子消费。大多数系统给子 Agent 独立预算，但 Hermes 认为子 Agent 的工作也是总工作的一部分。这个设计在"控制力"和"隔离性"之间做了一个清晰的取舍。
+  </div>
+</div>
+
+<div class="footer">Hermes Agent 深度拆解 · 第 08 篇 · 多 Agent 委派与并行 · delegate_task 与 Batch Runner</div>
+</div>
+
+<script>
+(function(){
+  var tabs = document.querySelectorAll('.tabs .tab');
+  var panes = document.querySelectorAll('.tc');
+  tabs.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var key = btn.getAttribute('data-tab');
+      tabs.forEach(function(b){ b.classList.remove('active'); });
+      panes.forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      var pane = document.querySelector('.tc[data-tab="' + key + '"]');
+      if(pane) pane.classList.add('active');
+    });
+  });
+})();
+</script>
+</body>
+</html>

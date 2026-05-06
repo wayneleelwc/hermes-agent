@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes 多平台 Gateway — 20 平台适配与可插拔架构</title>
+<style>
+:root {
+  --c-bg: #faf8f5; --c-canvas: #fff; --c-ink: #2d2d2d;
+  --c-terra: #c75b39; --c-terra-light: #fdf0ea;
+  --c-sage: #4a7c59; --c-sage-light: #eef5ef;
+  --c-slate: #5b6b7a; --c-slate-light: #f0f3f5;
+  --c-burg: #8b3a3a; --c-burg-light: #fdf2f2;
+  --c-amber: #b8751e; --c-amber-light: #fef8f0;
+  --c-moss: #5c7a4a; --c-moss-light: #f4f7f0;
+  --c-border: #e5e0d8; --c-border-light: #f0ece6;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-serif: Georgia, 'Times New Roman', 'Songti SC', 'SimSun', serif;
+  --font-mono: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-sans);background:var(--c-bg);color:var(--c-ink);display:flex;justify-content:center;padding:40px 20px;min-height:100vh}
+.C{background:var(--c-canvas);border:1px solid var(--c-border);box-shadow:0 1px 3px rgba(0,0,0,.04);padding:40px 44px;width:1280px;min-width:1280px}
+.header{margin-bottom:32px;text-align:center}
+.main-title{font-family:var(--font-serif);font-size:28px;font-weight:700;color:var(--c-ink);margin-bottom:4px;letter-spacing:-0.3px}
+.main-title em{font-style:normal;color:var(--c-terra)}
+.subtitle{font-size:14px;color:var(--c-slate);font-weight:400}
+
+.tabs{display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid var(--c-border);flex-wrap:wrap}
+.tab{padding:10px 18px;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:13px;font-weight:500;color:var(--c-slate);font-family:var(--font-sans);transition:all 0.2s;letter-spacing:0.2px}
+.tab:hover{color:var(--c-ink)}
+.tab.active{color:var(--c-terra);border-bottom-color:var(--c-terra);font-weight:600}
+.tc{display:none}
+.tc.active{display:block;border:1px solid var(--c-border);padding:28px 24px 24px;background:var(--c-canvas);box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.dt{font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--c-ink);margin-bottom:4px;text-align:center}
+.ds{font-size:14px;color:var(--c-slate);text-align:center;margin-bottom:24px;line-height:1.6}
+
+.chip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:2px;display:inline-block;white-space:nowrap;letter-spacing:0.3px}
+.chip-t{background:var(--c-terra-light);color:var(--c-terra)}
+.chip-s{background:var(--c-sage-light);color:var(--c-sage)}
+.chip-b{background:var(--c-burg-light);color:var(--c-burg)}
+.chip-a{background:var(--c-amber-light);color:var(--c-amber)}
+.chip-m{background:var(--c-moss-light);color:var(--c-moss)}
+.chip-sl{background:var(--c-slate-light);color:var(--c-slate)}
+
+.card{border:1px solid var(--c-border);border-left:4px solid var(--c-border);margin-bottom:6px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.card-hdr{padding:9px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;background:var(--c-border-light);border-bottom:1px solid var(--c-border)}
+.card-body{padding:12px 14px;font-size:13px;line-height:1.6;background:var(--c-canvas)}
+.card-t{border-left-color:var(--c-terra)}.card-t .card-hdr{background:var(--c-terra-light);color:var(--c-terra)}
+.card-s{border-left-color:var(--c-sage)}.card-s .card-hdr{background:var(--c-sage-light);color:var(--c-sage)}
+.card-b{border-left-color:var(--c-burg)}.card-b .card-hdr{background:var(--c-burg-light);color:var(--c-burg)}
+.card-a{border-left-color:var(--c-amber)}.card-a .card-hdr{background:var(--c-amber-light);color:var(--c-amber)}
+.card-m{border-left-color:var(--c-moss)}.card-m .card-hdr{background:var(--c-moss-light);color:var(--c-moss)}
+
+.L{display:flex;border:1px solid var(--c-border);margin-bottom:2px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.L-tag{width:110px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 8px;border-right:1px solid var(--c-border)}
+.L-num{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:15px;font-weight:700;margin-bottom:4px}
+.L-label{font-size:12px;font-weight:700;text-align:center;line-height:1.2;font-family:var(--font-sans)}
+.L-body{flex:1;padding:12px 16px;display:flex;flex-direction:column;gap:4px}
+.L-title{font-size:14px;font-weight:700;color:var(--c-ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.L-row{display:flex;align-items:center;gap:6px;font-size:13px;line-height:1.5}
+.L-dot{width:6px;height:6px;flex-shrink:0}
+.L-name{font-weight:700;font-family:var(--font-mono);font-size:12px;min-width:160px;flex-shrink:0;color:var(--c-slate)}
+.L-right{width:220px;flex-shrink:0;padding:10px 14px;border-left:1px solid var(--c-border);display:flex;flex-direction:column;justify-content:center;gap:3px;background:var(--c-border-light)}
+.L-right-title{font-size:11px;font-weight:700;color:var(--c-ink);margin-bottom:1px}
+.L-right-item{font-size:12px;color:var(--c-slate);line-height:1.4}
+
+.L.l1 .L-tag{background:var(--c-terra-light)}.L.l1 .L-label{color:var(--c-terra)}.L.l1 .L-num{background:var(--c-terra);color:#fff}
+.L.l2 .L-tag{background:#fef5f0}.L.l2 .L-label{color:#b8542e}
+.L.l3 .L-tag{background:var(--c-sage-light)}.L.l3 .L-label{color:var(--c-sage)}.L.l3 .L-num{background:var(--c-sage);color:#fff}
+.L.l4 .L-tag{background:var(--c-slate-light)}.L.l4 .L-label{color:var(--c-slate)}.L.l4 .L-num{background:var(--c-slate);color:#fff}
+.L.l5 .L-tag{background:var(--c-amber-light)}.L.l5 .L-label{color:var(--c-amber)}.L.l5 .L-num{background:var(--c-amber);color:#fff}
+.L.l6 .L-tag{background:var(--c-burg-light)}.L.l6 .L-label{color:var(--c-burg)}.L.l6 .L-num{background:var(--c-burg);color:#fff}
+
+.stage-bar{display:flex;align-items:stretch;gap:2px;margin-bottom:16px}
+.stage-cell{flex:1;padding:12px 10px;color:#fff;display:flex;align-items:center;gap:8px;min-width:0}
+.stage-cell .stage-num{width:28px;height:28px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:14px;font-weight:700;flex-shrink:0}
+.stage-cell .stage-text{flex:1;min-width:0}
+.stage-cell .stage-title{font-size:13px;font-weight:700;line-height:1.2}
+.stage-cell .stage-sub{font-size:10px;opacity:.8;margin-top:1px;line-height:1.3}
+.stage-cell.st1{background:var(--c-terra)}.stage-cell.st2{background:#d4734a}
+.stage-cell.st3{background:var(--c-sage)}.stage-cell.st4{background:var(--c-slate)}
+.stage-cell.st5{background:var(--c-moss)}.stage-cell.st6{background:var(--c-burg)}
+
+.flow-row{display:flex;align-items:center;gap:0;margin:16px 0;flex-wrap:wrap}
+.flow-node{flex:1;min-width:110px;text-align:center;padding:14px 10px;border:1px solid var(--c-border);background:var(--c-canvas);box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.flow-node .fn-title{font-size:14px;font-weight:700;color:var(--c-ink);margin-bottom:2px}
+.flow-node .fn-sub{font-size:11px;color:var(--c-slate);line-height:1.4}
+.flow-arrow{padding:0 4px;color:var(--c-terra);font-size:18px;font-weight:700;flex-shrink:0}
+
+.cmp-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px}
+.cmp-table th{background:var(--c-terra-light);color:var(--c-terra);padding:10px 12px;text-align:left;font-weight:700;border:1px solid var(--c-border);font-size:12px}
+.cmp-table td{padding:9px 12px;border:1px solid var(--c-border);line-height:1.5}
+.cmp-table tr:nth-child(even) td{background:var(--c-border-light)}
+
+.insight{border-left:4px solid var(--c-sage);background:var(--c-sage-light);padding:14px 18px;margin:16px 0;font-size:13px;line-height:1.7}
+.insight strong{color:var(--c-sage)}
+.footer{margin-top:16px;text-align:center;font-size:11px;color:var(--c-slate);line-height:1.6}
+.gate-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.gate-cell{border:1px solid var(--c-border);padding:16px 12px;text-align:center;background:var(--c-canvas);box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.gate-cell .gc-icon{font-size:24px;margin-bottom:8px}
+.gate-cell .gc-name{font-size:13px;font-weight:700;color:var(--c-ink);margin-bottom:2px}
+.gate-cell .gc-sub{font-size:11px;color:var(--c-slate)}
+</style>
+</head>
+<body>
+<div class="C">
+
+<div class="header">
+  <div class="main-title">多平台 Gateway — <em>20 平台适配与可插拔架构</em></div>
+  <div class="subtitle">Hermes Agent · 第 06 篇 · 消息平台接入层深度拆解</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="tab0">封面</button>
+  <button class="tab" data-tab="tab1">Gateway 全景</button>
+  <button class="tab" data-tab="tab2">平台分类矩阵</button>
+  <button class="tab" data-tab="tab3">消息处理流程</button>
+  <button class="tab" data-tab="tab4">三向对标</button>
+</div>
+
+<!-- ===== Tab 0: 封面 ===== -->
+<div class="tc active" data-tab="tab0">
+  <div class="dt">多平台 Gateway</div>
+  <div class="ds">第 06 篇 · 20 平台适配与可插拔架构</div>
+  <div class="stage-bar">
+    <div class="stage-cell st1"><div class="stage-num">1</div><div class="stage-text"><div class="stage-title">平台连接</div><div class="stage-sub">20 个 Adapter.start()</div></div></div>
+    <div class="stage-cell st2"><div class="stage-num">2</div><div class="stage-text"><div class="stage-title">消息接入</div><div class="stage-sub">on_message() 事件回调</div></div></div>
+    <div class="stage-cell st3"><div class="stage-num">3</div><div class="stage-text"><div class="stage-title">鉴权路由</div><div class="stage-sub">白名单 + Session Key</div></div></div>
+    <div class="stage-cell st4"><div class="stage-num">4</div><div class="stage-text"><div class="stage-title">Agent 调度</div><div class="stage-sub">AIAgent.run_conversation()</div></div></div>
+    <div class="stage-cell st5"><div class="stage-num">5</div><div class="stage-text"><div class="stage-title">回复投递</div><div class="stage-sub">Adapter.send_message()</div></div></div>
+  </div>
+  <div style="text-align:center;margin-top:16px">
+    <span class="chip chip-t">asyncio 长驻进程</span>
+    <span class="chip chip-s">可插拔平台</span>
+    <span class="chip chip-a">Session Key 隔离</span>
+    <span class="chip chip-sl">Cron 调度器</span>
+    <span class="chip chip-b">Hook 系统</span>
+  </div>
+  <div class="insight">
+    <strong>核心命题：</strong>Gateway 是 Hermes 独有的架构基因——一个 asyncio 长驻进程同时服务 20 个消息平台。所有平台适配器实现相同的 <code>on_message() + send_message()</code> 接口，将异构平台的消息统一注入到同一个 AIAgent 内核。
+  </div>
+</div>
+
+<!-- ===== Tab 1: Gateway 全景 ===== -->
+<div class="tc" data-tab="tab1">
+  <div class="dt">Gateway 架构全景</div>
+  <div class="ds">20 个平台适配器共享消息分发引擎与 AIAgent 内核</div>
+
+  <div class="card card-t">
+    <div class="card-hdr"><span class="chip chip-t">Platform Adapters</span> 20 个消息平台同时在线</div>
+    <div class="card-body">
+      <div class="gate-grid">
+        <div class="gate-cell"><div class="gc-name">Telegram</div><div class="gc-sub">Bot API</div></div>
+        <div class="gate-cell"><div class="gc-name">Discord</div><div class="gc-sub">Gateway Intents</div></div>
+        <div class="gate-cell"><div class="gc-name">Slack</div><div class="gc-sub">Socket Mode</div></div>
+        <div class="gate-cell"><div class="gc-name">WhatsApp</div><div class="gc-sub">Baileys WebSocket</div></div>
+        <div class="gate-cell"><div class="gc-name">Signal</div><div class="gc-sub">signal-cli</div></div>
+        <div class="gate-cell"><div class="gc-name">Matrix</div><div class="gc-sub">Matrix SDK</div></div>
+        <div class="gate-cell"><div class="gc-name">Mattermost</div><div class="gc-sub">WebSocket</div></div>
+        <div class="gate-cell"><div class="gc-name">iMessage</div><div class="gc-sub">BlueBubbles</div></div>
+        <div class="gate-cell"><div class="gc-name">Email</div><div class="gc-sub">IMAP/SMTP</div></div>
+        <div class="gate-cell"><div class="gc-name">SMS</div><div class="gc-sub">Twilio API</div></div>
+        <div class="gate-cell"><div class="gc-name">钉钉</div><div class="gc-sub">Webhook</div></div>
+        <div class="gate-cell"><div class="gc-name">飞书</div><div class="gc-sub">Open API</div></div>
+        <div class="gate-cell"><div class="gc-name">企业微信</div><div class="gc-sub">API</div></div>
+        <div class="gate-cell"><div class="gc-name">微信</div><div class="gc-sub">itchat</div></div>
+        <div class="gate-cell"><div class="gc-name">QQ</div><div class="gc-sub">go-cqhttp</div></div>
+        <div class="gate-cell"><div class="gc-name">HomeAssistant</div><div class="gc-sub">WebSocket</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card-s">
+    <div class="card-hdr"><span class="chip chip-s">内核</span> GatewayRunner — 统一消息分发引擎</div>
+    <div class="card-body">
+      <strong>GatewayRunner</strong> 是 <code>gateway/run.py</code> 的核心类，负责：<br>
+      ① 启动时遍历所有已配置平台 → adapter.start() 建立连接<br>
+      ② 运行时收到事件 → _handle_message() → 鉴权 → 会话加载 → AIAgent<br>
+      ③ 回复通过 adapter.send_message() 投递回原平台<br>
+    </div>
+  </div>
+
+  <div class="card card-a">
+    <div class="card-hdr"><span class="chip chip-a">并发</span> asyncio.to_thread() 线程池</div>
+    <div class="card-body">
+      多个平台的消息并行触发 <code>_handle_message()</code>。每个消息处理在独立 asyncio task 中运行，但 AIAgent 是同步的，实际执行通过 <code>asyncio.to_thread()</code> 转移到线程池，避免阻塞事件循环。
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab 2: 平台分类矩阵 ===== -->
+<div class="tc" data-tab="tab2">
+  <div class="dt">平台分类矩阵</div>
+  <div class="ds">按接入协议、鉴权方式和消息模型分类</div>
+
+  <table class="cmp-table">
+    <tr><th>分类</th><th>平台</th><th>接入协议</th><th>鉴权方式</th><th>消息模型</th></tr>
+    <tr>
+      <td><strong>IM 网关型</strong></td>
+      <td>Telegram / Discord / Slack</td>
+      <td>Bot API / WebSocket</td>
+      <td>Bot Token</td>
+      <td>长连接推送</td>
+    </tr>
+    <tr>
+      <td><strong>端到端加密</strong></td>
+      <td>WhatsApp / Signal</td>
+      <td>Baileys / signal-cli</td>
+      <td>设备密钥对</td>
+      <td>WebSocket 长轮询</td>
+    </tr>
+    <tr>
+      <td><strong>联邦协议</strong></td>
+      <td>Matrix / Mattermost</td>
+      <td>Matrix SDK / WebSocket</td>
+      <td>Bearer Token</td>
+      <td>事件流</td>
+    </tr>
+    <tr>
+      <td><strong>中国平台</strong></td>
+      <td>钉钉 / 飞书 / 企业微信 / 微信 / QQ</td>
+      <td>Webhook / Open API</td>
+      <td>App Key + Secret</td>
+      <td>Webhook 回调</td>
+    </tr>
+    <tr>
+      <td><strong>非即时通讯</strong></td>
+      <td>Email / SMS</td>
+      <td>IMAP+SMTP / Twilio</td>
+      <td>账户密码 / API Key</td>
+      <td>轮询</td>
+    </tr>
+    <tr>
+      <td><strong>特殊场景</strong></td>
+      <td>iMessage / HomeAssistant</td>
+      <td>BlueBubbles / WebSocket</td>
+      <td>设备凭证</td>
+      <td>推送 + 轮询混合</td>
+    </tr>
+  </table>
+
+  <div class="card card-s">
+    <div class="card-hdr"><span class="chip chip-s">接口契约</span> PlatformAdapter 抽象</div>
+    <div class="card-body">
+      所有平台适配器实现统一接口：<code>start()</code> 建立连接、<code>on_message()</code> 接收消息回调、<code>send_message()</code> 投递回复。GatewayRunner 不关心底层协议差异——只要适配器遵守契约，就能无缝接入。
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab 3: 消息处理流程 ===== -->
+<div class="tc" data-tab="tab3">
+  <div class="dt">消息处理全流程</div>
+  <div class="ds">从平台事件到 Agent 回复的完整链路</div>
+
+  <div class="stage-bar">
+    <div class="stage-cell st1"><div class="stage-num">1</div><div class="stage-text"><div class="stage-title">事件到达</div><div class="stage-sub">平台推送 / Webhook</div></div></div>
+    <div class="stage-cell st2"><div class="stage-num">2</div><div class="stage-text"><div class="stage-title">适配器解析</div><div class="stage-sub">→ MessageEvent</div></div></div>
+    <div class="stage-cell st3"><div class="stage-num">3</div><div class="stage-text"><div class="stage-title">用户鉴权</div><div class="stage-sub">白名单 / DM授权</div></div></div>
+    <div class="stage-cell st4"><div class="stage-num">4</div><div class="stage-text"><div class="stage-title">Session 加载</div><div class="stage-sub">SessionStore 读历史</div></div></div>
+    <div class="stage-cell st5"><div class="stage-num">5</div><div class="stage-text"><div class="stage-title">Agent 执行</div><div class="stage-sub">run_conversation()</div></div></div>
+    <div class="stage-cell st6"><div class="stage-num">6</div><div class="stage-text"><div class="stage-title">回复投递</div><div class="stage-sub">send_message()</div></div></div>
+  </div>
+
+  <div class="card card-t">
+    <div class="card-hdr"><span class="chip chip-t">Session Key</span> 多维度会话隔离</div>
+    <div class="card-body">
+      Key 格式：<code>agent:&lt;profile&gt;:&lt;platform&gt;:&lt;chat_type&gt;:&lt;chat_id&gt;</code><br>
+      确保不同 profile、不同平台、群聊 vs 私聊的会话完全隔离。同一用户在不同平台上的对话互不干扰。
+    </div>
+  </div>
+
+  <div class="card card-a">
+    <div class="card-hdr"><span class="chip chip-a">Cron</span> 定时任务调度器</div>
+    <div class="card-body">
+      Gateway 内置 <code>cron/</code> 调度器：用户通过 skill 创建定时任务 → <code>jobs.json</code> 持久化 → scheduler 定期检查 → 触发时 fork 新 AIAgent 执行。Curator 的 7 天审查周期也由此驱动。
+    </div>
+  </div>
+
+  <div class="card card-s">
+    <div class="card-hdr"><span class="chip chip-s">Hook</span> 生命周期钩子系统</div>
+    <div class="card-body">
+      <code>on_session_start</code> / <code>pre_llm_call</code> / <code>pre_api_request</code> / <code>agent:step</code> — 四个钩子覆盖 Agent 完整生命周期，支持插件在关键节点注入自定义逻辑。
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab 4: 三向对标 ===== -->
+<div class="tc" data-tab="tab4">
+  <div class="dt">三向对标</div>
+  <div class="ds">Hermes vs Gemini CLI vs Claude Code 的消息平台接入对比</div>
+  <table class="cmp-table">
+    <tr><th>维度</th><th>Hermes</th><th>Gemini CLI</th><th>Claude Code</th></tr>
+    <tr>
+      <td><strong>消息平台</strong></td>
+      <td>20 平台 Gateway</td>
+      <td>无</td>
+      <td>无</td>
+    </tr>
+    <tr>
+      <td><strong>进程模型</strong></td>
+      <td>asyncio 长驻进程</td>
+      <td>CLI 单进程</td>
+      <td>CLI 单进程</td>
+    </tr>
+    <tr>
+      <td><strong>会话存储</strong></td>
+      <td>SessionStore（SQLite FTS5）</td>
+      <td>文件系统</td>
+      <td>文件系统</td>
+    </tr>
+    <tr>
+      <td><strong>定时任务</strong></td>
+      <td>内置 Cron 调度器</td>
+      <td>无</td>
+      <td>无</td>
+    </tr>
+    <tr>
+      <td><strong>Webhook 支持</strong></td>
+      <td>✓</td>
+      <td>✗</td>
+      <td>✗</td>
+    </tr>
+    <tr>
+      <td><strong>多平台并发</strong></td>
+      <td>asyncio 事件循环 + ThreadPool</td>
+      <td>不适用</td>
+      <td>不适用</td>
+    </tr>
+    <tr>
+      <td><strong>生命周期钩子</strong></td>
+      <td>4 个 Hook（session/llm/api/step）</td>
+      <td>Extension Hook</td>
+      <td>Hook 系统</td>
+    </tr>
+    <tr>
+      <td><strong>中国平台支持</strong></td>
+      <td>✓（钉钉/飞书/企微/微信/QQ）</td>
+      <td>✗</td>
+      <td>✗</td>
+    </tr>
+  </table>
+  <div class="insight">
+    <strong>关键差异：</strong>Gateway 让 Hermes 不只是开发者的 CLI 工具，而是一个可以部署在服务器上的自主 Agent 后台服务。Gemini CLI 和 Claude Code 都定位为"开发者在终端里用的编程助手"，缺乏独立的消息平台接入能力。
+  </div>
+</div>
+
+<div class="footer">Hermes Agent 深度拆解 · 第 06 篇 · 多平台 Gateway · 20 平台适配与可插拔架构</div>
+</div>
+
+<script>
+(function(){
+  var tabs = document.querySelectorAll('.tabs .tab');
+  var panes = document.querySelectorAll('.tc');
+  tabs.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var key = btn.getAttribute('data-tab');
+      tabs.forEach(function(b){ b.classList.remove('active'); });
+      panes.forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      var pane = document.querySelector('.tc[data-tab="' + key + '"]');
+      if(pane) pane.classList.add('active');
+    });
+  });
+})();
+</script>
+</body>
+</html>
